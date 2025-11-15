@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>SharePin - Mobile Web App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  </head>
+  <body>
+    <div class="app">
+      <header class="header">
+        <div class="logo-circle">SP</div>
+        <div>
+          <h1 class="title">SharePin</h1>
+          <p class="subtitle">Simple, secure file sharing with a unique pin</p>
+        </div>
+      </header>
+
+      <main class="grid">
+        <section class="card">
+          <h2 class="card-title">Send Files</h2>
+          <p class="card-desc">Upload files and get a 6-digit PIN</p>
+
+          <div id="dropZone" class="drop-zone">
+            <div class="drop-icon">⬆</div>
+            <p><span class="highlight">Tap to choose</span> or drag &amp; drop</p>
+            <p class="hint">Any file type (demo runs only in this browser tab)</p>
+            <input id="fileInput" type="file" multiple hidden />
+          </div>
+
+          <div id="uploadError" class="error hidden"></div>
+
+          <div id="fileList" class="file-list hidden"></div>
+
+          <button id="generateBtn" class="btn primary full">Generate Share PIN</button>
+
+          <div id="pinBox" class="pin-box hidden">
+            <div class="pin-label">Your Share PIN</div>
+            <div id="pinCode" class="pin-code"></div>
+            <p class="hint">Share this PIN with the receiver (same device / session only in this demo)</p>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 class="card-title">Receive Files</h2>
+          <p class="card-desc">Enter the 6-digit PIN to access files</p>
+
+          <div class="input-row">
+            <input id="codeInput" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="123456" class="code-input" />
+            <button id="findBtn" class="btn">Find</button>
+          </div>
+          <div id="downloadError" class="error hidden"></div>
+
+          <div id="foundBox" class="found-box hidden">
+            <div class="found-header">
+              <span id="fileCount"></span>
+              <button id="clearBtn" class="btn ghost small">Clear</button>
+            </div>
+            <div id="foundList" class="file-list small"></div>
+            <button id="downloadAllBtn" class="btn primary full">Download All (ZIP)</button>
+          </div>
+
+          <div class="info">
+            <h3>How it works (demo)</h3>
+            <ol>
+              <li>Upload files in the left panel</li>
+              <li>Get a 6-digit PIN</li>
+              <li>Enter the PIN here to download files</li>
+            </ol>
+            <p class="note">Note: This offline demo stores files only in memory, so it works only while this page is open.</p>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <p>SharePin &middot; Mobile-friendly web app demo</p>
+        <a href="mailto:varikuntagunasekhar@gmail.com">Contact: varikuntagunasekhar@gmail.com</a>
+      </footer>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
