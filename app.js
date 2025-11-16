@@ -1,14 +1,28 @@
-// Simple in-memory storage of file groups by PIN
+// ===============================
+// 1. SUPABASE CONFIG
+// ===============================
+// Replace these two lines with YOUR real Supabase values
+const SUPABASE_URL = "https://ojxemhrukdzvemrmdxcf.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qeGVtaHJ1a2R6dmVtcm1keGNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyNDI5NDQsImV4cCI6MjA3ODgxODk0NH0.yLYXt0BzBSDLMF71q8bIJbFg2RrAk-bVMmcU0_xqtYA";
+const STORAGE_BUCKET = "sharepin-files";
+
+// Supabase client
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ===============================
+// 2. STATE & ELEMENTS
+// ===============================
 const state = {
-  currentFiles: [],
-  groups: {}, // pin -> File[]
+  filesToUpload: [],
+  foundItems: [],
 };
 
 const dropZone = document.getElementById("dropZone");
 const fileInput = document.getElementById("fileInput");
 const uploadError = document.getElementById("uploadError");
 const fileList = document.getElementById("fileList");
-const generateBtn = document.getElementById("generateBtn");
+const uploadBtn = document.getElementById("uploadBtn");
 const pinBox = document.getElementById("pinBox");
 const pinCodeEl = document.getElementById("pinCode");
 
@@ -21,182 +35,206 @@ const foundList = document.getElementById("foundList");
 const clearBtn = document.getElementById("clearBtn");
 const downloadAllBtn = document.getElementById("downloadAllBtn");
 
+// ===============================
+// 3. HELPERS
+// ===============================
 function formatSize(bytes) {
   if (bytes < 1024) return bytes + " B";
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
-  if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+  if (bytes < 1024 * 1024 * 1024)
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
   return (bytes / (1024 * 1024 * 1024)).toFixed(1) + " GB";
 }
 
-function renderFileList() {
-  if (!state.currentFiles.length) {
+function displayNameFromStored(name) {
+  const idx = name.indexOf("-");
+  if (idx === -1) return name;
+  return name.slice(idx + 1);
+}
+
+function setUploadError(msg) {
+  uploadError.textContent = msg;
+  uploadError.classList.toggle("hidden", !msg);
+}
+
+function setDownloadError(msg) {
+  downloadError.textContent = msg;
+  downloadError.classList.toggle("hidden", !msg);
+}
+
+function generatePin() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+function renderSelectedFiles() {
+  if (!state.filesToUpload.length) {
     fileList.classList.add("hidden");
     return;
   }
   fileList.classList.remove("hidden");
   fileList.innerHTML = "";
-  state.currentFiles.forEach((file, idx) => {
+
+  state.filesToUpload.forEach((file) => {
     const row = document.createElement("div");
     row.className = "file-row";
-    const name = document.createElement("div");
-    name.className = "file-name";
-    name.textContent = file.name;
-    const size = document.createElement("div");
-    size.className = "file-size";
-    size.textContent = formatSize(file.size);
-    row.appendChild(name);
-    row.appendChild(size);
+    row.innerHTML = `
+      <div class="file-name">${file.name}</div>
+      <div class="file-size">${formatSize(file.size)}</div>
+    `;
     fileList.appendChild(row);
   });
 }
 
-function setUploadError(msg) {
-  if (!msg) {
-    uploadError.classList.add("hidden");
-    uploadError.textContent = "";
-    return;
-  }
-  uploadError.textContent = msg;
-  uploadError.classList.remove("hidden");
-}
-
-function setDownloadError(msg) {
-  if (!msg) {
-    downloadError.classList.add("hidden");
-    downloadError.textContent = "";
-    return;
-  }
-  downloadError.textContent = msg;
-  downloadError.classList.remove("hidden");
-}
-
+// ===============================
+// 4. FILE SELECTION
+// ===============================
 dropZone.addEventListener("click", () => fileInput.click());
 
 dropZone.addEventListener("dragover", (e) => {
   e.preventDefault();
   dropZone.classList.add("drag");
 });
-
-dropZone.addEventListener("dragleave", (e) => {
-  e.preventDefault();
-  dropZone.classList.remove("drag");
-});
-
+dropZone.addEventListener("dragleave", () => dropZone.classList.remove("drag"));
 dropZone.addEventListener("drop", (e) => {
   e.preventDefault();
   dropZone.classList.remove("drag");
-  const files = Array.from(e.dataTransfer.files || []);
-  if (!files.length) return;
-  state.currentFiles = files;
-  setUploadError("");
-  pinBox.classList.add("hidden");
-  renderFileList();
+  state.filesToUpload = Array.from(e.dataTransfer.files);
+  renderSelectedFiles();
 });
 
 fileInput.addEventListener("change", (e) => {
-  const files = Array.from(e.target.files || []);
-  if (!files.length) return;
-  state.currentFiles = files;
-  setUploadError("");
-  pinBox.classList.add("hidden");
-  renderFileList();
+  state.filesToUpload = Array.from(e.target.files);
+  renderSelectedFiles();
 });
 
-generateBtn.addEventListener("click", () => {
-  if (!state.currentFiles.length) {
-    setUploadError("Please select at least one file.");
+// ===============================
+// 5. UPLOAD TO SUPABASE
+// ===============================
+uploadBtn.addEventListener("click", async () => {
+  if (!state.filesToUpload.length) {
+    setUploadError("Select at least one file.");
     return;
   }
-  // 6-digit PIN
-  const pin = Math.floor(100000 + Math.random() * 900000).toString();
-  state.groups[pin] = state.currentFiles;
-  pinCodeEl.textContent = pin;
-  pinBox.classList.remove("hidden");
-  setUploadError("");
-  alert("PIN generated: " + pin + "\nNote: this demo only works while the page is open.");
+
+  uploadBtn.disabled = true;
+  uploadBtn.textContent = "Uploading...";
+
+  const pin = generatePin();
+
+  try {
+    for (const file of state.filesToUpload) {
+      const storedName = `${Date.now()}-${file.name}`;
+      const path = `${pin}/${storedName}`;
+
+      const { error } = await sb.storage.from(STORAGE_BUCKET).upload(path, file);
+      if (error) throw error;
+    }
+
+    pinCodeEl.textContent = pin;
+    pinBox.classList.remove("hidden");
+    alert("PIN: " + pin + "\\nUse this PIN on any device to download.");
+  } catch (err) {
+    setUploadError("Upload failed: " + err.message);
+  } finally {
+    uploadBtn.disabled = false;
+    uploadBtn.textContent = "Upload & Generate PIN";
+  }
 });
 
+// ===============================
+// 6. LOAD FILES BY PIN
+// ===============================
 findBtn.addEventListener("click", () => {
-  const code = (codeInput.value || "").replace(/[^0-9]/g, "");
-  codeInput.value = code;
-  if (code.length !== 6) {
-    setDownloadError("Enter a 6-digit PIN");
-    foundBox.classList.add("hidden");
+  const pin = codeInput.value.trim();
+  if (pin.length !== 6) {
+    setDownloadError("Enter a valid 6-digit PIN");
     return;
   }
-  const files = state.groups[code];
-  if (!files || !files.length) {
-    setDownloadError("No files found for this PIN in this session.");
-    foundBox.classList.add("hidden");
-    return;
-  }
-  setDownloadError("");
-  foundBox.classList.remove("hidden");
-  fileCountEl.textContent = files.length + " file" + (files.length > 1 ? "s" : "") + " found";
-  foundList.innerHTML = "";
-  files.forEach((file) => {
-    const row = document.createElement("div");
-    row.className = "file-row";
-    const name = document.createElement("div");
-    name.className = "file-name";
-    name.textContent = file.name;
-    const size = document.createElement("div");
-    size.className = "file-size";
-    size.textContent = formatSize(file.size);
-    row.appendChild(name);
-    row.appendChild(size);
-    row.addEventListener("click", () => downloadSingle(file));
-    foundList.appendChild(row);
-  });
-
-  downloadAllBtn.onclick = () => downloadAll(files, code);
+  loadFiles(pin);
 });
 
 clearBtn.addEventListener("click", () => {
   foundBox.classList.add("hidden");
-  codeInput.value = "";
   setDownloadError("");
+  codeInput.value = "";
 });
 
-function downloadSingle(file) {
-  const url = URL.createObjectURL(file);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = file.name;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => {
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }, 200);
+async function loadFiles(pin) {
+  setDownloadError("");
+
+  const { data, error } = await sb.storage
+    .from(STORAGE_BUCKET)
+    .list(pin, { limit: 100 });
+
+  if (error || !data || !data.length) {
+    setDownloadError("No files found for this PIN.");
+    foundBox.classList.add("hidden");
+    return;
+  }
+
+  state.foundItems = data;
+  foundList.innerHTML = "";
+  fileCountEl.textContent = `${data.length} files found`;
+  foundBox.classList.remove("hidden");
+
+  data.forEach((item) => {
+    const row = document.createElement("div");
+    row.className = "file-row";
+    row.innerHTML = `
+      <div class="file-name">${displayNameFromStored(item.name)}</div>
+      <div class="file-size">${item.metadata?.size ? formatSize(item.metadata.size) : ""}</div>
+    `;
+    row.onclick = () => downloadSingle(pin, item.name);
+    foundList.appendChild(row);
+  });
+
+  downloadAllBtn.onclick = () => downloadAll(pin, data);
 }
 
-async function downloadAll(files, pin) {
-  if (!files.length) return;
+// ===============================
+// 7. DOWNLOAD SINGLE FILE
+// ===============================
+async function downloadSingle(pin, storedName) {
+  const { data, error } = await sb.storage
+    .from(STORAGE_BUCKET)
+    .createSignedUrl(`${pin}/${storedName}`, 3600);
+
+  if (error) return alert("Download failed.");
+
+  const url = data.signedUrl;
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = displayNameFromStored(storedName);
+  a.click();
+}
+
+// ===============================
+// 8. DOWNLOAD ALL AS ZIP
+// ===============================
+async function downloadAll(pin, items) {
   downloadAllBtn.disabled = true;
   downloadAllBtn.textContent = "Preparing...";
-  try {
-    const zip = new JSZip();
-    for (const file of files) {
-      const buf = await file.arrayBuffer();
-      zip.file(file.name, buf);
-    }
-    const blob = await zip.generateAsync({ type: "blob" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "sharepin-" + pin + ".zip";
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => {
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }, 400);
-  } catch (err) {
-    console.error(err);
-    alert("Failed to create ZIP. Try downloading files one by one.");
-  } finally {
-    downloadAllBtn.disabled = false;
-    downloadAllBtn.textContent = "Download All (ZIP)";
+
+  const zip = new JSZip();
+
+  for (const item of items) {
+    const { data } = await sb.storage
+      .from(STORAGE_BUCKET)
+      .createSignedUrl(`${pin}/${item.name}`, 3600);
+
+    const res = await fetch(data.signedUrl);
+    const blob = await res.blob();
+    const arrayBuffer = await blob.arrayBuffer();
+
+    zip.file(displayNameFromStored(item.name), arrayBuffer);
   }
+
+  const zipBlob = await zip.generateAsync({ type: "blob" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(zipBlob);
+  a.download = `sharepin-${pin}.zip`;
+  a.click();
+
+  downloadAllBtn.disabled = false;
+  downloadAllBtn.textContent = "Download All (ZIP)";
 }
