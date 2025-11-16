@@ -4,7 +4,7 @@
 // Replace these two lines with YOUR real Supabase values
 const SUPABASE_URL = "https://ojxemhrukdzvemrmdxcf.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qeGVtaHJ1a2R6dmVtcm1keGNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyNDI5NDQsImV4cCI6MjA3ODgxODk0NH0.yLYXt0BzBSDLMF71q8bIJbFg2RrAk-bVMmcU0_xqtYA";
-const STORAGE_BUCKET = "sharepinz";
+const STORAGE_BUCKET = "sharepin";
 
 // Supabase client
 const { createClient } = supabase;
