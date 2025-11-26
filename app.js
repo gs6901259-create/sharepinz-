@@ -3,7 +3,8 @@
 // ===============================
 // Replace these two lines with YOUR real Supabase values
 const SUPABASE_URL = "https://ojxemhrukdzvemrmdxcf.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qeGVtaHJ1a2R6dmVtcm1keGNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyNDI5NDQsImV4cCI6MjA3ODgxODk0NH0.yLYXt0BzBSDLMF71q8bIJbFg2RrAk-bVMmcU0_xqtYA";
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qeGVtaHJ1a2R6dmVtcm1keGNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyNDI5NDQsImV4cCI6MjA3ODgxODk0NH0.yLYXt0BzBSDLMF71q8bIJbFg2RrAk-bVMmcU0_xqtYA";
 const STORAGE_BUCKET = "sharepin-files";
 
 // Supabase client
@@ -94,7 +95,9 @@ dropZone.addEventListener("dragover", (e) => {
   e.preventDefault();
   dropZone.classList.add("drag");
 });
+
 dropZone.addEventListener("dragleave", () => dropZone.classList.remove("drag"));
+
 dropZone.addEventListener("drop", (e) => {
   e.preventDefault();
   dropZone.classList.remove("drag");
@@ -132,7 +135,7 @@ uploadBtn.addEventListener("click", async () => {
 
     pinCodeEl.textContent = pin;
     pinBox.classList.remove("hidden");
-    alert("PIN: " + pin + "\\nUse this PIN on any device to download.");
+    alert("PIN: " + pin + "\nUse this PIN on any device to download.");
   } catch (err) {
     setUploadError("Upload failed: " + err.message);
   } finally {
@@ -182,7 +185,9 @@ async function loadFiles(pin) {
     row.className = "file-row";
     row.innerHTML = `
       <div class="file-name">${displayNameFromStored(item.name)}</div>
-      <div class="file-size">${item.metadata?.size ? formatSize(item.metadata.size) : ""}</div>
+      <div class="file-size">${
+        item.metadata?.size ? formatSize(item.metadata.size) : ""
+      }</div>
     `;
     row.onclick = () => downloadSingle(pin, item.name);
     foundList.appendChild(row);
@@ -238,3 +243,46 @@ async function downloadAll(pin, items) {
   downloadAllBtn.disabled = false;
   downloadAllBtn.textContent = "Download All (ZIP)";
 }
+
+// ===============================
+// 9. DARK / LIGHT THEME TOGGLE
+// ===============================
+const THEME_KEY = "sharepin-theme";
+
+function applyTheme(theme) {
+  if (theme === "dark") {
+    document.body.classList.add("dark");
+  } else {
+    document.body.classList.remove("dark");
+  }
+}
+
+function initTheme() {
+  const saved = localStorage.getItem(THEME_KEY);
+  const prefersDark =
+    window.matchMedia &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+  const theme = saved || (prefersDark ? "dark" : "light");
+  applyTheme(theme);
+
+  const toggle = document.getElementById("themeToggle");
+  if (!toggle) return;
+
+  function updateButtonText() {
+    const isDark = document.body.classList.contains("dark");
+    toggle.textContent = isDark ? "☀️ Light" : "🌙 Dark";
+  }
+
+  updateButtonText();
+
+  toggle.addEventListener("click", () => {
+    const isDark = document.body.classList.contains("dark");
+    const nextTheme = isDark ? "light" : "dark";
+    applyTheme(nextTheme);
+    localStorage.setItem(THEME_KEY, nextTheme);
+    updateButtonText();
+  });
+}
+
+document.addEventListener("DOMContentLoaded", initTheme);
