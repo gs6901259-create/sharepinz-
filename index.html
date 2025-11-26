@@ -5,6 +5,16 @@
     <title>SharePin - Cloud Sharing</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-4Q27R78QQ6"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-4Q27R78QQ6');
+    </script>
+    <!-- End Google Analytics -->
+
     <link rel="stylesheet" href="styles.css" />
 
     <!-- JSZip for Download All -->
@@ -22,6 +32,11 @@
           <h1 class="title">SharePin</h1>
           <p class="subtitle">Real cloud sharing with a 6-digit PIN</p>
         </div>
+
+        <!-- 🌙 Dark Mode Toggle -->
+        <button id="themeToggle" class="btn ghost small">
+          🌙 Dark
+        </button>
       </header>
 
       <main class="grid">
@@ -108,8 +123,29 @@
 
       <footer class="footer">
         <p>SharePin • Cloud-based PIN file sharing</p>
-        <a href="mailto:varikuntagunasekhar@gmail.com">Contact</a>
       </footer>
+
+      <!-- =======================
+           FOLLOW ME SECTION
+      ======================== -->
+      <div class="follow-me">
+        <h3>Follow Me</h3>
+
+        <div class="follow-icons">
+          <!-- Instagram -->
+          <a href="https://instagram.com/gunasekhar_online" target="_blank" class="follow-item">
+            <span class="icon">📷</span>
+            <span>@gunasekhar_online</span>
+          </a>
+
+          <!-- Email -->
+          <a href="mailto:varikuntagunasekhar@gmail.com" class="follow-item">
+            <span class="icon">📧</span>
+            <span>Email Me</span>
+          </a>
+        </div>
+      </div>
+
     </div>
 
     <script src="app.js"></script>
