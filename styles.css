@@ -1,3 +1,79 @@
+/* =========================
+   THEME VARIABLES
+   ========================= */
+:root {
+  --bg-gradient-from: #ebf4ff;
+  --bg-gradient-to: #e0e7ff;
+  --text: #111827;
+  --card-bg: #ffffff;
+  --shadow: rgba(15, 23, 42, 0.08);
+
+  --primary: #4f46e5;
+  --primary-dark: #4338ca;
+  --title: #312e81;
+  --subtitle: #4f46e5;
+
+  --border-soft: #e5e7eb;
+  --border-drop: #cbd5f5;
+  --drop-bg: #f9fafb;
+  --drop-bg-active: #eef2ff;
+
+  --muted: #6b7280;
+  --hint: #6b7280;
+
+  --found-bg: #f9fafb;
+  --found-border: #d1fae5;
+
+  --footer-text: #6b7280;
+  --link: #4f46e5;
+
+  --pin-bg: #eef2ff;
+  --pin-label: #4f46e5;
+  --pin-code: #312e81;
+
+  --btn-bg: #e5e7eb;
+  --btn-text: #111827;
+  --ghost-text: #6b7280;
+}
+
+body.dark {
+  --bg-gradient-from: #020617;
+  --bg-gradient-to: #020617;
+  --text: #e5e7eb;
+  --card-bg: #020617;
+  --shadow: rgba(15, 23, 42, 0.7);
+
+  --primary: #6366f1;
+  --primary-dark: #4f46e5;
+  --title: #e5e7eb;
+  --subtitle: #a5b4fc;
+
+  --border-soft: #1f2937;
+  --border-drop: #334155;
+  --drop-bg: #020617;
+  --drop-bg-active: #020617;
+
+  --muted: #9ca3af;
+  --hint: #9ca3af;
+
+  --found-bg: #020617;
+  --found-border: #065f46;
+
+  --footer-text: #6b7280;
+  --link: #60a5fa;
+
+  --pin-bg: #020617;
+  --pin-label: #a5b4fc;
+  --pin-code: #e5e7eb;
+
+  --btn-bg: #111827;
+  --btn-text: #e5e7eb;
+  --ghost-text: #9ca3af;
+}
+
+/* =========================
+   GLOBAL
+   ========================= */
 *,
 *::before,
 *::after {
@@ -7,8 +83,8 @@
 body {
   margin: 0;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: linear-gradient(135deg, #ebf4ff, #e0e7ff);
-  color: #111827;
+  background: linear-gradient(135deg, var(--bg-gradient-from), var(--bg-gradient-to));
+  color: var(--text);
 }
 
 .app {
@@ -17,6 +93,9 @@ body {
   padding: 16px;
 }
 
+/* =========================
+   HEADER
+   ========================= */
 .header {
   display: flex;
   align-items: center;
@@ -28,7 +107,7 @@ body {
   width: 44px;
   height: 44px;
   border-radius: 999px;
-  background: #4f46e5;
+  background: var(--primary);
   color: white;
   display: flex;
   align-items: center;
@@ -40,15 +119,18 @@ body {
 .title {
   margin: 0;
   font-size: 24px;
-  color: #312e81;
+  color: var(--title);
 }
 
 .subtitle {
   margin: 0;
   font-size: 14px;
-  color: #4f46e5;
+  color: var(--subtitle);
 }
 
+/* =========================
+   LAYOUT
+   ========================= */
 .grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -61,11 +143,14 @@ body {
   }
 }
 
+/* =========================
+   CARDS
+   ========================= */
 .card {
-  background: white;
+  background: var(--card-bg);
   border-radius: 16px;
   padding: 16px;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 10px 30px var(--shadow);
 }
 
 .card-title {
@@ -76,22 +161,25 @@ body {
 .card-desc {
   margin: 0 0 12px;
   font-size: 13px;
-  color: #6b7280;
+  color: var(--muted);
 }
 
+/* =========================
+   DROP ZONE
+   ========================= */
 .drop-zone {
-  border: 2px dashed #cbd5f5;
+  border: 2px dashed var(--border-drop);
   border-radius: 12px;
   padding: 20px;
   text-align: center;
   cursor: pointer;
   transition: 0.15s ease;
-  background: #f9fafb;
+  background: var(--drop-bg);
 }
 
 .drop-zone.drag {
-  border-color: #4f46e5;
-  background: #eef2ff;
+  border-color: var(--primary);
+  background: var(--drop-bg-active);
 }
 
 .drop-icon {
@@ -100,21 +188,25 @@ body {
 }
 
 .highlight {
-  color: #4f46e5;
+  color: var(--primary);
   font-weight: 600;
 }
 
 .hint {
   font-size: 11px;
-  color: #6b7280;
+  color: var(--hint);
 }
 
+/* =========================
+   FILE LIST
+   ========================= */
 .file-list {
   margin-top: 10px;
   max-height: 180px;
   overflow-y: auto;
   border-radius: 8px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-soft);
+  background: var(--card-bg);
 }
 
 .file-list.small {
@@ -126,7 +218,7 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 6px 10px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--border-soft);
   font-size: 13px;
 }
 
@@ -144,9 +236,12 @@ body {
 
 .file-size {
   font-size: 11px;
-  color: #6b7280;
+  color: var(--muted);
 }
 
+/* =========================
+   BUTTONS
+   ========================= */
 .btn {
   border: none;
   border-radius: 999px;
@@ -154,8 +249,8 @@ body {
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  background: #e5e7eb;
-  color: #111827;
+  background: var(--btn-bg);
+  color: var(--btn-text);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -163,12 +258,12 @@ body {
 }
 
 .btn.primary {
-  background: #4f46e5;
+  background: var(--primary);
   color: white;
 }
 
 .btn.primary:active {
-  background: #4338ca;
+  background: var(--primary-dark);
 }
 
 .btn.full {
@@ -178,7 +273,7 @@ body {
 
 .btn.ghost {
   background: transparent;
-  color: #6b7280;
+  color: var(--ghost-text);
 }
 
 .btn.small {
@@ -191,17 +286,20 @@ body {
   cursor: default;
 }
 
+/* =========================
+   PIN DISPLAY
+   ========================= */
 .pin-box {
   margin-top: 16px;
   padding: 12px;
-  background: #eef2ff;
+  background: var(--pin-bg);
   border-radius: 12px;
   text-align: center;
 }
 
 .pin-label {
   font-size: 12px;
-  color: #4f46e5;
+  color: var(--pin-label);
 }
 
 .pin-code {
@@ -209,9 +307,12 @@ body {
   letter-spacing: 0.3em;
   margin: 6px 0;
   font-weight: 700;
-  color: #312e81;
+  color: var(--pin-code);
 }
 
+/* =========================
+   INPUTS
+   ========================= */
 .input-row {
   display: flex;
   gap: 8px;
@@ -221,29 +322,34 @@ body {
 .code-input {
   flex: 1;
   border-radius: 999px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-soft);
   padding: 8px 10px;
   font-size: 18px;
   text-align: center;
   letter-spacing: 0.4em;
+  background: var(--card-bg);
+  color: var(--text);
 }
 
 .error {
   margin-top: 4px;
   font-size: 12px;
-  color: #b91c1c;
+  color: #f97373; /* error stays red-ish for both themes */
 }
 
 .hidden {
   display: none;
 }
 
+/* =========================
+   FOUND BOX
+   ========================= */
 .found-box {
   margin-top: 10px;
   padding: 10px;
   border-radius: 12px;
-  background: #f9fafb;
-  border: 1px solid #d1fae5;
+  background: var(--found-bg);
+  border: 1px solid var(--found-border);
 }
 
 .found-header {
@@ -254,10 +360,13 @@ body {
   font-size: 13px;
 }
 
+/* =========================
+   INFO TEXT
+   ========================= */
 .info {
   margin-top: 14px;
   font-size: 13px;
-  color: #374151;
+  color: var(--text);
 }
 
 .info h3 {
@@ -272,17 +381,64 @@ body {
 
 .note {
   font-size: 11px;
-  color: #6b7280;
+  color: var(--muted);
 }
 
+/* =========================
+   FOOTER
+   ========================= */
 .footer {
   margin-top: 18px;
   text-align: center;
   font-size: 11px;
-  color: #6b7280;
+  color: var(--footer-text);
 }
 
 .footer a {
-  color: #4f46e5;
+  color: var(--link);
   text-decoration: none;
+}
+
+/* =========================
+   FOLLOW ME SECTION
+   ========================= */
+.follow-me {
+  margin-top: 30px;
+  text-align: center;
+}
+
+.follow-me h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+  color: var(--title);
+}
+
+.follow-icons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.follow-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  color: var(--link);
+  font-size: 14px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: var(--card-bg);
+  box-shadow: 0 3px 12px var(--shadow);
+  transition: 0.2s ease;
+}
+
+.follow-item:hover {
+  transform: translateY(-2px);
+  opacity: 0.9;
+}
+
+.icon {
+  font-size: 18px;
 }
