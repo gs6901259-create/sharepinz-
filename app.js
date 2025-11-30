@@ -1,169 +1,288 @@
-export default {
-  async fetch(request, env, ctx) {
-    const url = new URL(request.url);
-    const { pathname } = url;
+// ===============================
+// 1. SUPABASE CONFIG
+// ===============================
+// Replace these two lines with YOUR real Supabase values
+const SUPABASE_URL = "https://ojxemhrukdzvemrmdxcf.supabase.co";
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qeGVtaHJ1a2R6dmVtcm1keGNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyNDI5NDQsImV4cCI6MjA3ODgxODk0NH0.yLYXt0BzBSDLMF71q8bIJbFg2RrAk-bVMmcU0_xqtYA";
+const STORAGE_BUCKET = "sharepin-files";
 
-    // Basic CORS
-    if (request.method === "OPTIONS") {
-      return new Response(null, {
-        status: 204,
-        headers: corsHeaders(),
-      });
-    }
+// Supabase client
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    try {
-      if (request.method === "POST" && pathname === "/api/upload") {
-        return handleUpload(request, env);
-      }
-
-      if (request.method === "GET" && pathname.startsWith("/api/files/")) {
-        const pin = pathname.split("/").pop();
-        return handleListFiles(pin, env);
-      }
-
-      if (request.method === "GET" && pathname.startsWith("/api/download/")) {
-        const parts = pathname.split("/");
-        const pin = parts[3];
-        const key = decodeURIComponent(parts.slice(4).join("/"));
-        return handleDownload(pin, key, env);
-      }
-
-      if (request.method === "DELETE" && pathname.startsWith("/api/files/")) {
-        const parts = pathname.split("/");
-        const pin = parts[3];
-        return handleDelete(pin, env);
-      }
-
-      return new Response("Not found", { status: 404, headers: corsHeaders() });
-    } catch (err) {
-      console.error(err);
-      return new Response("Server error", { status: 500, headers: corsHeaders() });
-    }
-  },
+// ===============================
+// 2. STATE & ELEMENTS
+// ===============================
+const state = {
+  filesToUpload: [],
+  foundItems: [],
 };
 
-function corsHeaders() {
-  return {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET,POST,DELETE,OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
-  };
+const dropZone = document.getElementById("dropZone");
+const fileInput = document.getElementById("fileInput");
+const uploadError = document.getElementById("uploadError");
+const fileList = document.getElementById("fileList");
+const uploadBtn = document.getElementById("uploadBtn");
+const pinBox = document.getElementById("pinBox");
+const pinCodeEl = document.getElementById("pinCode");
+
+const codeInput = document.getElementById("codeInput");
+const findBtn = document.getElementById("findBtn");
+const downloadError = document.getElementById("downloadError");
+const foundBox = document.getElementById("foundBox");
+const fileCountEl = document.getElementById("fileCount");
+const foundList = document.getElementById("foundList");
+const clearBtn = document.getElementById("clearBtn");
+const downloadAllBtn = document.getElementById("downloadAllBtn");
+
+// ===============================
+// 3. HELPERS
+// ===============================
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + " B";
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+  if (bytes < 1024 * 1024 * 1024)
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+  return (bytes / (1024 * 1024 * 1024)).toFixed(1) + " GB";
+}
+
+function displayNameFromStored(name) {
+  const idx = name.indexOf("-");
+  if (idx === -1) return name;
+  return name.slice(idx + 1);
+}
+
+function setUploadError(msg) {
+  uploadError.textContent = msg;
+  uploadError.classList.toggle("hidden", !msg);
+}
+
+function setDownloadError(msg) {
+  downloadError.textContent = msg;
+  downloadError.classList.toggle("hidden", !msg);
 }
 
 function generatePin() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-async function handleUpload(request, env) {
-  const formData = await request.formData();
-  const files = formData.getAll("files");
-  if (!files || files.length === 0) {
-    return new Response("No files", { status: 400, headers: corsHeaders() });
+function renderSelectedFiles() {
+  if (!state.filesToUpload.length) {
+    fileList.classList.add("hidden");
+    return;
   }
+  fileList.classList.remove("hidden");
+  fileList.innerHTML = "";
 
-  let pin = formData.get("pin");
-  if (!pin) {
-    pin = generatePin();
-  }
-
-  const now = Date.now();
-  const expiresAt = now + 24 * 60 * 60 * 1000; // 24 hours
-
-  for (const file of files) {
-    const arrayBuffer = await file.arrayBuffer();
-    const key = `${pin}/${crypto.randomUUID()}_${file.name}`;
-
-    await env.SHAREPIN_BUCKET.put(key, arrayBuffer, {
-      httpMetadata: { contentType: file.type || "application/octet-stream" },
-      customMetadata: {
-        originalName: file.name,
-        pin,
-        expiresAt: String(expiresAt),
-      },
-    });
-  }
-
-  return new Response(JSON.stringify({ pin }), {
-    status: 200,
-    headers: { "Content-Type": "application/json", ...corsHeaders() },
+  state.filesToUpload.forEach((file) => {
+    const row = document.createElement("div");
+    row.className = "file-row";
+    row.innerHTML = `
+      <div class="file-name">${file.name}</div>
+      <div class="file-size">${formatSize(file.size)}</div>
+    `;
+    fileList.appendChild(row);
   });
 }
 
-async function handleListFiles(pin, env) {
-  if (!pin) {
-    return new Response("Pin required", { status: 400, headers: corsHeaders() });
+// ===============================
+// 4. FILE SELECTION
+// ===============================
+dropZone.addEventListener("click", () => fileInput.click());
+
+dropZone.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  dropZone.classList.add("drag");
+});
+
+dropZone.addEventListener("dragleave", () => dropZone.classList.remove("drag"));
+
+dropZone.addEventListener("drop", (e) => {
+  e.preventDefault();
+  dropZone.classList.remove("drag");
+  state.filesToUpload = Array.from(e.dataTransfer.files);
+  renderSelectedFiles();
+});
+
+fileInput.addEventListener("change", (e) => {
+  state.filesToUpload = Array.from(e.target.files);
+  renderSelectedFiles();
+});
+
+// ===============================
+// 5. UPLOAD TO SUPABASE
+// ===============================
+uploadBtn.addEventListener("click", async () => {
+  if (!state.filesToUpload.length) {
+    setUploadError("Select at least one file.");
+    return;
   }
 
-  const list = await env.SHAREPIN_BUCKET.list({ prefix: `${pin}/` });
-  const now = Date.now();
-  const files = [];
+  uploadBtn.disabled = true;
+  uploadBtn.textContent = "Uploading...";
 
-  for (const obj of list.objects) {
-    const meta = obj.customMetadata || {};
-    const expiresAt = Number(meta.expiresAt || 0);
+  const pin = generatePin();
 
-    // Auto-delete expired objects
-    if (expiresAt && now > expiresAt) {
-      await env.SHAREPIN_BUCKET.delete(obj.key);
-      continue;
+  try {
+    for (const file of state.filesToUpload) {
+      const storedName = `${Date.now()}-${file.name}`;
+      const path = `${pin}/${storedName}`;
+
+      const { error } = await sb.storage.from(STORAGE_BUCKET).upload(path, file);
+      if (error) throw error;
     }
 
-    files.push({
-      key: obj.key,
-      name: meta.originalName || obj.key.split("/").pop(),
-      size: obj.size,
-    });
+    pinCodeEl.textContent = pin;
+    pinBox.classList.remove("hidden");
+    alert("PIN: " + pin + "\nUse this PIN on any device to download.");
+  } catch (err) {
+    setUploadError("Upload failed: " + err.message);
+  } finally {
+    uploadBtn.disabled = false;
+    uploadBtn.textContent = "Upload & Generate PIN";
+  }
+});
+
+// ===============================
+// 6. LOAD FILES BY PIN
+// ===============================
+findBtn.addEventListener("click", () => {
+  const pin = codeInput.value.trim();
+  if (pin.length !== 6) {
+    setDownloadError("Enter a valid 6-digit PIN");
+    return;
+  }
+  loadFiles(pin);
+});
+
+clearBtn.addEventListener("click", () => {
+  foundBox.classList.add("hidden");
+  setDownloadError("");
+  codeInput.value = "";
+});
+
+async function loadFiles(pin) {
+  setDownloadError("");
+
+  const { data, error } = await sb.storage
+    .from(STORAGE_BUCKET)
+    .list(pin, { limit: 100 });
+
+  if (error || !data || !data.length) {
+    setDownloadError("No files found for this PIN.");
+    foundBox.classList.add("hidden");
+    return;
   }
 
-  return new Response(JSON.stringify({ files }), {
-    status: 200,
-    headers: { "Content-Type": "application/json", ...corsHeaders() },
+  state.foundItems = data;
+  foundList.innerHTML = "";
+  fileCountEl.textContent = `${data.length} files found`;
+  foundBox.classList.remove("hidden");
+
+  data.forEach((item) => {
+    const row = document.createElement("div");
+    row.className = "file-row";
+    row.innerHTML = `
+      <div class="file-name">${displayNameFromStored(item.name)}</div>
+      <div class="file-size">${
+        item.metadata?.size ? formatSize(item.metadata.size) : ""
+      }</div>
+    `;
+    row.onclick = () => downloadSingle(pin, item.name);
+    foundList.appendChild(row);
+  });
+
+  downloadAllBtn.onclick = () => downloadAll(pin, data);
+}
+
+// ===============================
+// 7. DOWNLOAD SINGLE FILE
+// ===============================
+async function downloadSingle(pin, storedName) {
+  const { data, error } = await sb.storage
+    .from(STORAGE_BUCKET)
+    .createSignedUrl(`${pin}/${storedName}`, 3600);
+
+  if (error) return alert("Download failed.");
+
+  const url = data.signedUrl;
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = displayNameFromStored(storedName);
+  a.click();
+}
+
+// ===============================
+// 8. DOWNLOAD ALL AS ZIP
+// ===============================
+async function downloadAll(pin, items) {
+  downloadAllBtn.disabled = true;
+  downloadAllBtn.textContent = "Preparing...";
+
+  const zip = new JSZip();
+
+  for (const item of items) {
+    const { data } = await sb.storage
+      .from(STORAGE_BUCKET)
+      .createSignedUrl(`${pin}/${item.name}`, 3600);
+
+    const res = await fetch(data.signedUrl);
+    const blob = await res.blob();
+    const arrayBuffer = await blob.arrayBuffer();
+
+    zip.file(displayNameFromStored(item.name), arrayBuffer);
+  }
+
+  const zipBlob = await zip.generateAsync({ type: "blob" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(zipBlob);
+  a.download = `sharepin-${pin}.zip`;
+  a.click();
+
+  downloadAllBtn.disabled = false;
+  downloadAllBtn.textContent = "Download All (ZIP)";
+}
+
+// ===============================
+// 9. DARK / LIGHT THEME TOGGLE
+// ===============================
+const THEME_KEY = "sharepin-theme";
+
+function applyTheme(theme) {
+  if (theme === "dark") {
+    document.body.classList.add("dark");
+  } else {
+    document.body.classList.remove("dark");
+  }
+}
+
+function initTheme() {
+  const saved = localStorage.getItem(THEME_KEY);
+  const prefersDark =
+    window.matchMedia &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+  const theme = saved || (prefersDark ? "dark" : "light");
+  applyTheme(theme);
+
+  const toggle = document.getElementById("themeToggle");
+  if (!toggle) return;
+
+  function updateButtonText() {
+    const isDark = document.body.classList.contains("dark");
+    toggle.textContent = isDark ? "☀️ Light" : "🌙 Dark";
+  }
+
+  updateButtonText();
+
+  toggle.addEventListener("click", () => {
+    const isDark = document.body.classList.contains("dark");
+    const nextTheme = isDark ? "light" : "dark";
+    applyTheme(nextTheme);
+    localStorage.setItem(THEME_KEY, nextTheme);
+    updateButtonText();
   });
 }
 
-async function handleDownload(pin, key, env) {
-  if (!pin || !key || !key.startsWith(`${pin}/`)) {
-    return new Response("Invalid key", { status: 400, headers: corsHeaders() });
-  }
-
-  const object = await env.SHAREPIN_BUCKET.get(key);
-  if (!object) {
-    return new Response("Not found", { status: 404, headers: corsHeaders() });
-  }
-
-  const meta = object.customMetadata || {};
-  const expiresAt = Number(meta.expiresAt || 0);
-  const now = Date.now();
-
-  if (expiresAt && now > expiresAt) {
-    await env.SHAREPIN_BUCKET.delete(key);
-    return new Response("Expired", { status: 410, headers: corsHeaders() });
-  }
-
-  const body = object.body;
-  const originalName = meta.originalName || key.split("/").pop();
-
-  const headers = {
-    "Content-Type": object.httpMetadata?.contentType || "application/octet-stream",
-    "Content-Disposition": `attachment; filename="${encodeURIComponent(originalName)}"`,
-    ...corsHeaders(),
-  };
-
-  return new Response(body, { status: 200, headers });
-}
-
-async function handleDelete(pin, env) {
-  if (!pin) {
-    return new Response("Pin required", { status: 400, headers: corsHeaders() });
-  }
-
-  const list = await env.SHAREPIN_BUCKET.list({ prefix: `${pin}/` });
-  for (const obj of list.objects) {
-    await env.SHAREPIN_BUCKET.delete(obj.key);
-  }
-
-  return new Response(JSON.stringify({ ok: true }), {
-    status: 200,
-    headers: { "Content-Type": "application/json", ...corsHeaders() },
-  });
-}
+document.addEventListener("DOMContentLoaded", initTheme);
