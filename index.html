@@ -2,170 +2,629 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>SharePin - Cloud Sharing</title>
+    <title>SharePinz - Cloud Sharing</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <!-- Google Tag Manager -->
-    <script>
-      (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-      new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-      j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-      'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-      })(window,document,'script','dataLayer','GTM-W9P8L38C');
-    </script>
-    <!-- End Google Tag Manager -->
-
-    <!-- Google Analytics (GA4) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-4Q27R78QQ6"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-4Q27R78QQ6');
-    </script>
-    <!-- End Google Analytics -->
-
-    <link rel="stylesheet" href="styles.css" />
-
-    <!-- JSZip for Download All -->
+    <!-- JSZip for Download All ZIP -->
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
-    <!-- Supabase JavaScript client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        background: linear-gradient(135deg, #ebf4ff, #e0e7ff);
+        color: #111827;
+      }
+      body.dark {
+        background: radial-gradient(circle at top, #020617, #020617 40%, #030712);
+        color: #e5e7eb;
+      }
+      .app {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 16px;
+      }
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      .logo-wrap {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .logo-circle {
+        width: 44px;
+        height: 44px;
+        border-radius: 999px;
+        background: #4f46e5;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 20px;
+      }
+      .title {
+        margin: 0;
+        font-size: 24px;
+        color: #312e81;
+      }
+      body.dark .title {
+        color: #c7d2fe;
+      }
+      .subtitle {
+        margin: 0;
+        font-size: 14px;
+        color: #4b5563;
+      }
+      body.dark .subtitle {
+        color: #9ca3af;
+      }
+      .btn {
+        padding: 8px 14px;
+        border-radius: 999px;
+        border: none;
+        background: #4f46e5;
+        color: white;
+        font-size: 14px;
+        cursor: pointer;
+      }
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: default;
+      }
+      .btn-outline {
+        background: transparent;
+        border: 1px solid #4f46e5;
+        color: #4f46e5;
+      }
+      body.dark .btn-outline {
+        border-color: #a5b4fc;
+        color: #e5e7eb;
+      }
+      .card {
+        background: white;
+        border-radius: 18px;
+        padding: 16px;
+        margin-bottom: 16px;
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+      }
+      body.dark .card {
+        background: #020617;
+        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.7);
+      }
+      .section-title {
+        margin: 0 0 8px;
+        font-size: 18px;
+      }
+      .muted {
+        font-size: 13px;
+        color: #6b7280;
+      }
+      body.dark .muted {
+        color: #9ca3af;
+      }
+      #dropZone {
+        border-radius: 16px;
+        border: 1.5px dashed #4f46e5;
+        padding: 24px;
+        text-align: center;
+        cursor: pointer;
+        transition: background 0.15s, border-color 0.15s, transform 0.15s;
+        background: rgba(79, 70, 229, 0.04);
+      }
+      #dropZone.drag {
+        background: rgba(79, 70, 229, 0.08);
+        transform: translateY(-1px);
+      }
+      body.dark #dropZone {
+        border-color: #818cf8;
+        background: rgba(129, 140, 248, 0.07);
+      }
+      .hidden {
+        display: none !important;
+      }
+      .file-list,
+      .found-list {
+        margin-top: 10px;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.4);
+        max-height: 280px;
+        overflow: auto;
+      }
+      .file-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 10px;
+        font-size: 14px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+      }
+      .file-row:last-child {
+        border-bottom: none;
+      }
+      .file-row:hover {
+        background: rgba(79, 70, 229, 0.06);
+        cursor: pointer;
+      }
+      body.dark .file-row:hover {
+        background: rgba(129, 140, 248, 0.13);
+      }
+      .file-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 70%;
+      }
+      .file-size {
+        font-variant-numeric: tabular-nums;
+        opacity: 0.8;
+      }
+      .error {
+        margin-top: 8px;
+        color: #b91c1c;
+        font-size: 13px;
+      }
+      body.dark .error {
+        color: #fecaca;
+      }
+      .pin-box {
+        margin-top: 10px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: #eef2ff;
+        border: 1px dashed #4f46e5;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+      }
+      body.dark .pin-box {
+        background: rgba(30, 64, 175, 0.5);
+        border-color: #a5b4fc;
+      }
+      .pin-code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+        font-weight: 600;
+        letter-spacing: 1px;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+        flex-wrap: wrap;
+      }
+      .row input {
+        flex: 1;
+        min-width: 0;
+        padding: 8px 10px;
+        border-radius: 999px;
+        border: 1px solid #9ca3af;
+        font-size: 14px;
+      }
+      body.dark .row input {
+        background: #020617;
+        color: #e5e7eb;
+        border-color: #4b5563;
+      }
+      .row small {
+        font-size: 12px;
+      }
+    </style>
   </head>
-
   <body>
-    <!-- Google Tag Manager (noscript) -->
-    <noscript>
-      <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-W9P8L38C"
-              height="0" width="0"
-              style="display:none;visibility:hidden"></iframe>
-    </noscript>
-    <!-- End Google Tag Manager (noscript) -->
-
     <div class="app">
       <header class="header">
-        <div class="logo-circle">SP</div>
-        <div>
-          <h1 class="title">SharePin</h1>
-          <p class="subtitle">Real cloud sharing with a 6-digit PIN</p>
+        <div class="logo-wrap">
+          <div class="logo-circle">SP</div>
+          <div>
+            <h1 class="title">SharePinz</h1>
+            <p class="subtitle">Share files with a simple 6-digit PIN.</p>
+          </div>
         </div>
-
-        <!-- 🌙 Dark Mode Toggle -->
-        <button id="themeToggle" class="btn ghost small">
-          🌙 Dark
-        </button>
+        <button id="themeToggle" class="btn btn-outline"></button>
       </header>
 
-      <main class="grid">
+      <!-- Upload card -->
+      <section class="card">
+        <h2 class="section-title">1. Upload & generate PIN</h2>
+        <p class="muted">Drop files below or tap the box to select.</p>
 
-        <!-- ============ Sender Section ============ -->
-        <section class="card">
-          <h2 class="card-title">Send Files</h2>
-          <p class="card-desc">
-            Upload files to cloud storage and get a PIN that works on any device.
+        <div id="dropZone">
+          <p><strong>Drop files here</strong> or click to choose</p>
+          <p class="muted" style="margin-top: 4px">
+            We’ll give you a PIN to share. Files auto-delete after 24 hours.
           </p>
+        </div>
+        <input id="fileInput" type="file" multiple class="hidden" />
 
-          <div id="dropZone" class="drop-zone">
-            <div class="drop-icon">⬆</div>
-            <p>
-              <span class="highlight">Tap to choose</span> or drag &amp; drop
-            </p>
-            <p class="hint">Your files will be uploaded to Supabase</p>
-            <input id="fileInput" type="file" multiple hidden />
-          </div>
+        <div id="fileList" class="file-list hidden"></div>
 
-          <div id="uploadError" class="error hidden"></div>
-          <div id="fileList" class="file-list hidden"></div>
+        <div id="uploadError" class="error hidden"></div>
 
-          <button id="uploadBtn" class="btn primary full">
-            Upload &amp; Generate PIN
-          </button>
+        <div style="margin-top: 10px">
+          <button id="uploadBtn" class="btn">Upload & Generate PIN</button>
+        </div>
 
-          <div id="pinBox" class="pin-box hidden">
-            <div class="pin-label">Your Share PIN</div>
-            <div id="pinCode" class="pin-code"></div>
-            <p class="hint">
-              Share this PIN with anyone — they can download your files.
-            </p>
-          </div>
-        </section>
+        <div id="pinBox" class="pin-box hidden">
+          <span>Your SharePIN:</span>
+          <span id="pinCode" class="pin-code"></span>
+        </div>
+      </section>
 
-        <!-- ============ Receiver Section ============ -->
-        <section class="card">
-          <h2 class="card-title">Receive Files</h2>
-          <p class="card-desc">
-            Enter the 6-digit PIN to download the shared files.
-          </p>
+      <!-- Download card -->
+      <section class="card">
+        <h2 class="section-title">2. Download with PIN</h2>
+        <p class="muted">Enter the PIN you received to fetch the files.</p>
 
-          <div class="input-row">
-            <input
-              id="codeInput"
-              maxlength="6"
-              inputmode="numeric"
-              pattern="[0-9]*"
-              placeholder="123456"
-              class="code-input"
-            />
-            <button id="findBtn" class="btn">Find</button>
-          </div>
+        <div class="row">
+          <input
+            id="codeInput"
+            type="text"
+            maxlength="6"
+            placeholder="Enter 6-digit PIN"
+          />
+          <button id="findBtn" class="btn">Find Files</button>
+          <button id="clearBtn" class="btn btn-outline">Clear</button>
+        </div>
 
-          <div id="downloadError" class="error hidden"></div>
+        <div id="downloadError" class="error hidden"></div>
 
-          <div id="foundBox" class="found-box hidden">
-            <div class="found-header">
-              <span id="fileCount"></span>
-              <button id="clearBtn" class="btn ghost small">Clear</button>
-            </div>
-            <div id="foundList" class="file-list small"></div>
-
-            <button id="downloadAllBtn" class="btn primary full">
+        <div
+          id="foundBox"
+          class="hidden"
+          style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px"
+        >
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+            "
+          >
+            <div id="fileCount" class="muted"></div>
+            <button id="downloadAllBtn" class="btn btn-outline">
               Download All (ZIP)
             </button>
           </div>
-
-          <div class="info">
-            <h3>How it works</h3>
-            <ol>
-              <li>Files are uploaded to your Supabase bucket.</li>
-              <li>You get a unique 6-digit PIN.</li>
-              <li>Anyone can download using that PIN.</li>
-            </ol>
-            <p class="note">
-              Manage or delete your files anytime from your Supabase dashboard.
-            </p>
-          </div>
-        </section>
-
-      </main>
-
-      <footer class="footer">
-        <p>SharePin • Cloud-based PIN file sharing</p>
-      </footer>
-
-      <!-- =======================
-           FOLLOW ME SECTION
-      ======================== -->
-      <div class="follow-me">
-        <h3>Follow Me</h3>
-
-        <div class="follow-icons">
-          <!-- Instagram -->
-          <a href="https://instagram.com/gunasekhar_online" target="_blank" class="follow-item">
-            <span class="icon">📷</span>
-            <span>@gunasekhar_online</span>
-          </a>
-
-          <!-- Email -->
-          <a href="mailto:varikuntagunasekhar@gmail.com" class="follow-item">
-            <span class="icon">📧</span>
-            <span>Email Me</span>
-          </a>
+          <div id="foundList" class="found-list"></div>
         </div>
-      </div>
-
+      </section>
     </div>
 
-    <script src="app.js"></script>
+    <script>
+      // ===============================
+      // 1. WORKER CONFIG (CHANGE THIS)
+      // ===============================
+      const WORKER_BASE_URL =
+        "https://sharepinz-worker.gs6901259.workers.dev"; // <-- change if different
+
+      // ===============================
+      // 2. STATE & ELEMENTS
+      // ===============================
+      const state = {
+        filesToUpload: [],
+        foundItems: [],
+      };
+
+      const dropZone = document.getElementById("dropZone");
+      const fileInput = document.getElementById("fileInput");
+      const uploadError = document.getElementById("uploadError");
+      const fileList = document.getElementById("fileList");
+      const uploadBtn = document.getElementById("uploadBtn");
+      const pinBox = document.getElementById("pinBox");
+      const pinCodeEl = document.getElementById("pinCode");
+
+      const codeInput = document.getElementById("codeInput");
+      const findBtn = document.getElementById("findBtn");
+      const downloadError = document.getElementById("downloadError");
+      const foundBox = document.getElementById("foundBox");
+      const fileCountEl = document.getElementById("fileCount");
+      const foundList = document.getElementById("foundList");
+      const clearBtn = document.getElementById("clearBtn");
+      const downloadAllBtn = document.getElementById("downloadAllBtn");
+
+      // ===============================
+      // 3. HELPERS
+      // ===============================
+      function formatSize(bytes) {
+        if (bytes < 1024) return bytes + " B";
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+        if (bytes < 1024 * 1024 * 1024)
+          return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+        return (bytes / (1024 * 1024 * 1024)).toFixed(1) + " GB";
+      }
+
+      function displayNameFromStored(name) {
+        const idx = name.indexOf("-");
+        if (idx === -1) return name;
+        return name.slice(idx + 1);
+      }
+
+      function setUploadError(msg) {
+        uploadError.textContent = msg;
+        uploadError.classList.toggle("hidden", !msg);
+      }
+
+      function setDownloadError(msg) {
+        downloadError.textContent = msg;
+        downloadError.classList.toggle("hidden", !msg);
+      }
+
+      function generatePin() {
+        return Math.floor(100000 + Math.random() * 900000).toString();
+      }
+
+      function renderSelectedFiles() {
+        if (!state.filesToUpload.length) {
+          fileList.classList.add("hidden");
+          fileList.innerHTML = "";
+          return;
+        }
+        fileList.classList.remove("hidden");
+        fileList.innerHTML = "";
+
+        state.filesToUpload.forEach((file) => {
+          const row = document.createElement("div");
+          row.className = "file-row";
+          row.innerHTML = `
+            <div class="file-name">${file.name}</div>
+            <div class="file-size">${formatSize(file.size)}</div>
+          `;
+          fileList.appendChild(row);
+        });
+      }
+
+      // ===============================
+      // 4. FILE SELECTION
+      // ===============================
+      dropZone.addEventListener("click", () => fileInput.click());
+
+      dropZone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dropZone.classList.add("drag");
+      });
+
+      dropZone.addEventListener("dragleave", () =>
+        dropZone.classList.remove("drag")
+      );
+
+      dropZone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropZone.classList.remove("drag");
+        state.filesToUpload = Array.from(e.dataTransfer.files);
+        renderSelectedFiles();
+      });
+
+      fileInput.addEventListener("change", (e) => {
+        state.filesToUpload = Array.from(e.target.files);
+        renderSelectedFiles();
+      });
+
+      // ===============================
+      // 5. UPLOAD TO R2 (via Worker)
+      // ===============================
+      uploadBtn.addEventListener("click", async () => {
+        if (!state.filesToUpload.length) {
+          setUploadError("Select at least one file.");
+          return;
+        }
+
+        if (!WORKER_BASE_URL || WORKER_BASE_URL.includes("workers.dev") === false) {
+          setUploadError("WORKER_BASE_URL not configured.");
+          return;
+        }
+
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = "Uploading...";
+        setUploadError("");
+
+        const pin = generatePin();
+
+        try {
+          const formData = new FormData();
+          formData.append("pin", pin);
+          state.filesToUpload.forEach((file) => {
+            formData.append("file", file);
+          });
+
+          const res = await fetch(`${WORKER_BASE_URL}/upload`, {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!res.ok) {
+            const txt = await res.text();
+            throw new Error(txt || "Upload failed");
+          }
+
+          pinCodeEl.textContent = pin;
+          pinBox.classList.remove("hidden");
+          alert(
+            "PIN: " +
+              pin +
+              "\nUse this PIN on any device within 24 hours to download."
+          );
+        } catch (err) {
+          setUploadError("Upload failed: " + err.message);
+        } finally {
+          uploadBtn.disabled = false;
+          uploadBtn.textContent = "Upload & Generate PIN";
+        }
+      });
+
+      // ===============================
+      // 6. LOAD FILES BY PIN
+      // ===============================
+      findBtn.addEventListener("click", () => {
+        const pin = codeInput.value.trim();
+        if (pin.length !== 6) {
+          setDownloadError("Enter a valid 6-digit PIN");
+          return;
+        }
+        loadFiles(pin);
+      });
+
+      clearBtn.addEventListener("click", () => {
+        foundBox.classList.add("hidden");
+        setDownloadError("");
+        codeInput.value = "";
+      });
+
+      async function loadFiles(pin) {
+        setDownloadError("");
+
+        try {
+          const res = await fetch(
+            `${WORKER_BASE_URL}/list?pin=${encodeURIComponent(pin)}`
+          );
+
+          if (!res.ok) {
+            const msg = await res.text();
+            setDownloadError(
+              msg || "No files found for this PIN (maybe expired after 24h)."
+            );
+            foundBox.classList.add("hidden");
+            return;
+          }
+
+          const json = await res.json();
+          const data = json.items || [];
+
+          state.foundItems = data;
+          foundList.innerHTML = "";
+          fileCountEl.textContent = `${data.length} files found`;
+          foundBox.classList.remove("hidden");
+
+          data.forEach((item) => {
+            const row = document.createElement("div");
+            row.className = "file-row";
+            row.innerHTML = `
+              <div class="file-name">${item.displayName}</div>
+              <div class="file-size">${
+                item.size ? formatSize(item.size) : ""
+              }</div>
+            `;
+            row.onclick = () => downloadSingle(pin, item.storedName);
+            foundList.appendChild(row);
+          });
+
+          downloadAllBtn.onclick = () => downloadAll(pin, data);
+        } catch (e) {
+          setDownloadError("No files found for this PIN.");
+          foundBox.classList.add("hidden");
+        }
+      }
+
+      // ===============================
+      // 7. DOWNLOAD SINGLE FILE
+      // ===============================
+      async function downloadSingle(pin, storedName) {
+        const url = `${WORKER_BASE_URL}/file?pin=${encodeURIComponent(
+          pin
+        )}&name=${encodeURIComponent(storedName)}`;
+
+        const res = await fetch(url);
+        if (!res.ok) {
+          const msg = await res.text();
+          alert(msg || "Download failed (maybe PIN expired).");
+          return;
+        }
+
+        const blob = await res.blob();
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = displayNameFromStored(storedName);
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
+
+      // ===============================
+      // 8. DOWNLOAD ALL AS ZIP
+      // ===============================
+      async function downloadAll(pin, items) {
+        downloadAllBtn.disabled = true;
+        downloadAllBtn.textContent = "Preparing...";
+
+        const zip = new JSZip();
+
+        try {
+          for (const item of items) {
+            const url = `${WORKER_BASE_URL}/file?pin=${encodeURIComponent(
+              pin
+            )}&name=${encodeURIComponent(item.storedName)}`;
+
+            const res = await fetch(url);
+            if (!res.ok) continue;
+
+            const blob = await res.blob();
+            const arrayBuffer = await blob.arrayBuffer();
+
+            zip.file(displayNameFromStored(item.storedName), arrayBuffer);
+          }
+
+          const zipBlob = await zip.generateAsync({ type: "blob" });
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(zipBlob);
+          a.download = `sharepin-${pin}.zip`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+        } finally {
+          downloadAllBtn.disabled = false;
+          downloadAllBtn.textContent = "Download All (ZIP)";
+        }
+      }
+
+      // ===============================
+      // 9. DARK / LIGHT THEME TOGGLE
+      // ===============================
+      const THEME_KEY = "sharepin-theme";
+
+      function applyTheme(theme) {
+        if (theme === "dark") document.body.classList.add("dark");
+        else document.body.classList.remove("dark");
+      }
+
+      function initTheme() {
+        const saved = localStorage.getItem(THEME_KEY);
+        const prefersDark =
+          window.matchMedia &&
+          window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+        const theme = saved || (prefersDark ? "dark" : "light");
+        applyTheme(theme);
+
+        const toggle = document.getElementById("themeToggle");
+        if (!toggle) return;
+
+        function updateButtonText() {
+          const isDark = document.body.classList.contains("dark");
+          toggle.textContent = isDark ? "☀️ Light" : "🌙 Dark";
+        }
+
+        updateButtonText();
+
+        toggle.addEventListener("click", () => {
+          const isDark = document.body.classList.contains("dark");
+          const nextTheme = isDark ? "light" : "dark";
+          applyTheme(nextTheme);
+          localStorage.setItem(THEME_KEY, nextTheme);
+          updateButtonText();
+        });
+      }
+
+      document.addEventListener("DOMContentLoaded", initTheme);
+    </script>
   </body>
 </html>
