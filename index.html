@@ -9,9 +9,7 @@
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
     <style>
-      * {
-        box-sizing: border-box;
-      }
+      * { box-sizing: border-box; }
       body {
         margin: 0;
         font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
@@ -27,6 +25,9 @@
         max-width: 960px;
         margin: 0 auto;
         padding: 16px;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
       }
       .header {
         display: flex;
@@ -52,22 +53,11 @@
         font-weight: 700;
         font-size: 20px;
       }
-      .title {
-        margin: 0;
-        font-size: 24px;
-        color: #312e81;
-      }
-      body.dark .title {
-        color: #c7d2fe;
-      }
-      .subtitle {
-        margin: 0;
-        font-size: 14px;
-        color: #4b5563;
-      }
-      body.dark .subtitle {
-        color: #9ca3af;
-      }
+      .title { margin: 0; font-size: 24px; color: #312e81; }
+      body.dark .title { color: #c7d2fe; }
+      .subtitle { margin: 0; font-size: 14px; color: #4b5563; }
+      body.dark .subtitle { color: #9ca3af; }
+
       .btn {
         padding: 8px 14px;
         border-radius: 999px;
@@ -77,10 +67,7 @@
         font-size: 14px;
         cursor: pointer;
       }
-      .btn:disabled {
-        opacity: 0.6;
-        cursor: default;
-      }
+      .btn:disabled { opacity: 0.6; cursor: default; }
       .btn-outline {
         background: transparent;
         border: 1px solid #4f46e5;
@@ -101,17 +88,10 @@
         background: #020617;
         box-shadow: 0 18px 45px rgba(0, 0, 0, 0.7);
       }
-      .section-title {
-        margin: 0 0 8px;
-        font-size: 18px;
-      }
-      .muted {
-        font-size: 13px;
-        color: #6b7280;
-      }
-      body.dark .muted {
-        color: #9ca3af;
-      }
+      .section-title { margin: 0 0 8px; font-size: 18px; }
+      .muted { font-size: 13px; color: #6b7280; }
+      body.dark .muted { color: #9ca3af; }
+
       #dropZone {
         border-radius: 16px;
         border: 1.5px dashed #4f46e5;
@@ -129,11 +109,10 @@
         border-color: #818cf8;
         background: rgba(129, 140, 248, 0.07);
       }
-      .hidden {
-        display: none !important;
-      }
-      .file-list,
-      .found-list {
+
+      .hidden { display: none !important; }
+
+      .file-list, .found-list {
         margin-top: 10px;
         border-radius: 12px;
         border: 1px solid rgba(148, 163, 184, 0.4);
@@ -148,9 +127,7 @@
         font-size: 14px;
         border-bottom: 1px solid rgba(148, 163, 184, 0.25);
       }
-      .file-row:last-child {
-        border-bottom: none;
-      }
+      .file-row:last-child { border-bottom: none; }
       .file-row:hover {
         background: rgba(79, 70, 229, 0.06);
         cursor: pointer;
@@ -168,14 +145,10 @@
         font-variant-numeric: tabular-nums;
         opacity: 0.8;
       }
-      .error {
-        margin-top: 8px;
-        color: #b91c1c;
-        font-size: 13px;
-      }
-      body.dark .error {
-        color: #fecaca;
-      }
+
+      .error { margin-top: 8px; color: #b91c1c; font-size: 13px; }
+      body.dark .error { color: #fecaca; }
+
       .pin-box {
         margin-top: 10px;
         padding: 10px 12px;
@@ -197,6 +170,7 @@
         font-weight: 600;
         letter-spacing: 1px;
       }
+
       .row {
         display: flex;
         gap: 8px;
@@ -216,9 +190,21 @@
         color: #e5e7eb;
         border-color: #4b5563;
       }
-      .row small {
-        font-size: 12px;
+
+      footer {
+        margin-top: auto;
+        padding: 12px 4px 4px;
+        font-size: 13px;
+        text-align: center;
+        color: #4b5563;
       }
+      body.dark footer { color: #9ca3af; }
+      footer a {
+        color: #4f46e5;
+        text-decoration: none;
+        font-weight: 600;
+      }
+      body.dark footer a { color: #a5b4fc; }
     </style>
   </head>
   <body>
@@ -299,6 +285,13 @@
           <div id="foundList" class="found-list"></div>
         </div>
       </section>
+
+      <footer>
+        Made with ❤️ by SharePinz. Follow me:
+        <a href="https://instagram.com/gunasekhar_online" target="_blank"
+          >@gunasekhar_online</a
+        >
+      </footer>
     </div>
 
     <script>
@@ -306,15 +299,12 @@
       // 1. WORKER CONFIG (CHANGE THIS)
       // ===============================
       const WORKER_BASE_URL =
-        "https://sharepinz-worker.gs6901259.workers.dev"; // <-- change if different
+        "https://hidden-thunder-137d.gs6901259.workers.dev"; // <-- put your real worker URL
 
       // ===============================
       // 2. STATE & ELEMENTS
       // ===============================
-      const state = {
-        filesToUpload: [],
-        foundItems: [],
-      };
+      const state = { filesToUpload: [], foundItems: [] };
 
       const dropZone = document.getElementById("dropZone");
       const fileInput = document.getElementById("fileInput");
@@ -372,7 +362,6 @@
         }
         fileList.classList.remove("hidden");
         fileList.innerHTML = "";
-
         state.filesToUpload.forEach((file) => {
           const row = document.createElement("div");
           row.className = "file-row";
@@ -388,23 +377,19 @@
       // 4. FILE SELECTION
       // ===============================
       dropZone.addEventListener("click", () => fileInput.click());
-
       dropZone.addEventListener("dragover", (e) => {
         e.preventDefault();
         dropZone.classList.add("drag");
       });
-
       dropZone.addEventListener("dragleave", () =>
         dropZone.classList.remove("drag")
       );
-
       dropZone.addEventListener("drop", (e) => {
         e.preventDefault();
         dropZone.classList.remove("drag");
         state.filesToUpload = Array.from(e.dataTransfer.files);
         renderSelectedFiles();
       });
-
       fileInput.addEventListener("change", (e) => {
         state.filesToUpload = Array.from(e.target.files);
         renderSelectedFiles();
@@ -419,11 +404,6 @@
           return;
         }
 
-        if (!WORKER_BASE_URL || WORKER_BASE_URL.includes("workers.dev") === false) {
-          setUploadError("WORKER_BASE_URL not configured.");
-          return;
-        }
-
         uploadBtn.disabled = true;
         uploadBtn.textContent = "Uploading...";
         setUploadError("");
@@ -433,9 +413,7 @@
         try {
           const formData = new FormData();
           formData.append("pin", pin);
-          state.filesToUpload.forEach((file) => {
-            formData.append("file", file);
-          });
+          state.filesToUpload.forEach((file) => formData.append("file", file));
 
           const res = await fetch(`${WORKER_BASE_URL}/upload`, {
             method: "POST",
@@ -482,12 +460,10 @@
 
       async function loadFiles(pin) {
         setDownloadError("");
-
         try {
           const res = await fetch(
             `${WORKER_BASE_URL}/list?pin=${encodeURIComponent(pin)}`
           );
-
           if (!res.ok) {
             const msg = await res.text();
             setDownloadError(
@@ -499,8 +475,8 @@
 
           const json = await res.json();
           const data = json.items || [];
-
           state.foundItems = data;
+
           foundList.innerHTML = "";
           fileCountEl.textContent = `${data.length} files found`;
           foundBox.classList.remove("hidden");
@@ -532,14 +508,12 @@
         const url = `${WORKER_BASE_URL}/file?pin=${encodeURIComponent(
           pin
         )}&name=${encodeURIComponent(storedName)}`;
-
         const res = await fetch(url);
         if (!res.ok) {
           const msg = await res.text();
           alert(msg || "Download failed (maybe PIN expired).");
           return;
         }
-
         const blob = await res.blob();
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
@@ -557,7 +531,6 @@
         downloadAllBtn.textContent = "Preparing...";
 
         const zip = new JSZip();
-
         try {
           for (const item of items) {
             const url = `${WORKER_BASE_URL}/file?pin=${encodeURIComponent(
@@ -566,10 +539,8 @@
 
             const res = await fetch(url);
             if (!res.ok) continue;
-
             const blob = await res.blob();
             const arrayBuffer = await blob.arrayBuffer();
-
             zip.file(displayNameFromStored(item.storedName), arrayBuffer);
           }
 
@@ -590,31 +561,25 @@
       // 9. DARK / LIGHT THEME TOGGLE
       // ===============================
       const THEME_KEY = "sharepin-theme";
-
       function applyTheme(theme) {
         if (theme === "dark") document.body.classList.add("dark");
         else document.body.classList.remove("dark");
       }
-
       function initTheme() {
         const saved = localStorage.getItem(THEME_KEY);
         const prefersDark =
           window.matchMedia &&
           window.matchMedia("(prefers-color-scheme: dark)").matches;
-
         const theme = saved || (prefersDark ? "dark" : "light");
         applyTheme(theme);
 
         const toggle = document.getElementById("themeToggle");
         if (!toggle) return;
-
         function updateButtonText() {
           const isDark = document.body.classList.contains("dark");
           toggle.textContent = isDark ? "☀️ Light" : "🌙 Dark";
         }
-
         updateButtonText();
-
         toggle.addEventListener("click", () => {
           const isDark = document.body.classList.contains("dark");
           const nextTheme = isDark ? "light" : "dark";
@@ -623,7 +588,6 @@
           updateButtonText();
         });
       }
-
       document.addEventListener("DOMContentLoaded", initTheme);
     </script>
   </body>
