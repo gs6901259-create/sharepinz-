@@ -7,7 +7,7 @@ const SUPABASE_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qeGVtaHJ1a2R6dmVtcm1keGNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyNDI5NDQsImV4cCI6MjA3ODgxODk0NH0.yLYXt0BzBSDLMF71q8bIJbFg2RrAk-bVMmcU0_xqtYA";
 const STORAGE_BUCKET = "sharepin-files";
 
-// Supabase client
+// Supabase client (from CDN script)
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -86,6 +86,17 @@ function renderSelectedFiles() {
   });
 }
 
+// =============== NEW: save metadata for auto-delete ===============
+async function saveFileMetadata(path) {
+  const { error } = await sb.from("files").insert({
+    file_path: path,
+  });
+  if (error) {
+    console.error("Failed to save metadata", error);
+    // We don't stop upload if metadata insert fails
+  }
+}
+
 // ===============================
 // 4. FILE SELECTION
 // ===============================
@@ -119,6 +130,7 @@ uploadBtn.addEventListener("click", async () => {
     return;
   }
 
+  setUploadError("");
   uploadBtn.disabled = true;
   uploadBtn.textContent = "Uploading...";
 
@@ -129,14 +141,21 @@ uploadBtn.addEventListener("click", async () => {
       const storedName = `${Date.now()}-${file.name}`;
       const path = `${pin}/${storedName}`;
 
-      const { error } = await sb.storage.from(STORAGE_BUCKET).upload(path, file);
+      const { error } = await sb.storage
+        .from(STORAGE_BUCKET)
+        .upload(path, file);
+
       if (error) throw error;
+
+      // Save path in DB for 24h cleanup
+      await saveFileMetadata(path);
     }
 
     pinCodeEl.textContent = pin;
     pinBox.classList.remove("hidden");
     alert("PIN: " + pin + "\nUse this PIN on any device to download.");
   } catch (err) {
+    console.error(err);
     setUploadError("Upload failed: " + err.message);
   } finally {
     uploadBtn.disabled = false;
