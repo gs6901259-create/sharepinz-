@@ -4,9 +4,11 @@
 const SUPABASE_URL = "https://ojxemhrukdzvemrmdxcf.supabase.co";
 const SUPABASE_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qeGVtaHJ1a2R6dmVtcm1keGNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyNDI5NDQsImV4cCI6MjA3ODgxODk0NH0.yLYXt0BzBSDLMF71q8bIJbFg2RrAk-bVMmcU0_xqtYA";
-const STORAGE_BUCKET = "sharepin-files";
-const PIN_TABLE = "pins";
 
+const STORAGE_BUCKET = "sharepin-files"; // Supabase storage bucket
+const PIN_TABLE = "pins"; // metadata table (optional but we keep it)
+
+// Supabase client
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -42,7 +44,7 @@ const clearBtn = document.getElementById("clearBtn");
 const downloadAllBtn = document.getElementById("downloadAllBtn");
 
 const pinExpiryBox = document.getElementById("pinExpiryBox");
-const pinExpiryTimer = document.getElementById("pinExpiryTimer");
+let pinExpiryTimer = document.getElementById("pinExpiryTimer"); // let, not const!
 
 // ===============================
 // 3. HELPERS
@@ -111,46 +113,6 @@ function renderSelectedFiles() {
   });
 }
 
-function startPinExpiryCountdown(createdAtIsoString) {
-  if (!pinExpiryBox || !pinExpiryTimer || !createdAtIsoString) return;
-
-  if (pinCountdownInterval) {
-    clearInterval(pinCountdownInterval);
-    pinCountdownInterval = null;
-  }
-
-  const createdTime = new Date(createdAtIsoString).getTime();
-  const expiryTime = createdTime + 24 * 60 * 60 * 1000;
-
-  function updateTimer() {
-    const now = Date.now();
-    const diff = expiryTime - now;
-
-    if (diff <= 0) {
-      pinExpiryTimer.textContent = "00:00:00";
-      pinExpiryBox.textContent =
-        "This PIN has expired. Please ask the sender to upload again.";
-      clearInterval(pinCountdownInterval);
-      pinCountdownInterval = null;
-      return;
-    }
-
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-    const hh = String(hours).padStart(2, "0");
-    const mm = String(minutes).padStart(2, "0");
-    const ss = String(seconds).padStart(2, "0");
-
-    pinExpiryTimer.textContent = `${hh}:${mm}:${ss}`;
-    pinExpiryBox.classList.remove("hidden");
-  }
-
-  updateTimer();
-  pinCountdownInterval = setInterval(updateTimer, 1000);
-}
-
 function hidePinExpiry() {
   if (pinCountdownInterval) {
     clearInterval(pinCountdownInterval);
@@ -158,7 +120,8 @@ function hidePinExpiry() {
   }
   if (pinExpiryBox) {
     pinExpiryBox.classList.add("hidden");
-    pinExpiryBox.innerHTML = 'PIN expires in <span id="pinExpiryTimer">--:--:--</span>';
+    pinExpiryBox.innerHTML =
+      'PIN expires in <span id="pinExpiryTimer">--:--:--</span>';
     const span = pinExpiryBox.querySelector("span");
     if (span) {
       pinExpiryTimer = span;
@@ -166,9 +129,11 @@ function hidePinExpiry() {
   }
 }
 
+// optional: we try to insert metadata but app does NOT depend on it for download
 async function createPinRecord(pin) {
   try {
-    const { error } = await sb.from(PIN_TABLE).insert({ pin });
+    const { data, error } = await sb.from(PIN_TABLE).insert({ pin });
+    console.log("PIN INSERT RESULT:", { data, error });
     if (error) {
       console.error("Error saving PIN metadata:", error);
     }
@@ -214,17 +179,21 @@ uploadBtn.addEventListener("click", async () => {
   uploadBtn.disabled = true;
   uploadBtn.textContent = "Uploading...";
 
-  let pin = generatePin();
+  const pin = generatePin();
 
   try {
     for (const file of state.filesToUpload) {
       const storedName = `${Date.now()}-${file.name}`;
       const path = `${pin}/${storedName}`;
 
-      const { error } = await sb.storage.from(STORAGE_BUCKET).upload(path, file);
+      const { error } = await sb.storage
+        .from(STORAGE_BUCKET)
+        .upload(path, file);
+
       if (error) throw error;
     }
 
+    // try to store metadata (not mandatory for download)
     await createPinRecord(pin);
 
     pinCodeEl.textContent = pin;
@@ -240,7 +209,11 @@ uploadBtn.addEventListener("click", async () => {
       });
     }
 
-    alert("PIN: " + pin + "\nUse this PIN on any device to download (valid for 24 hours).");
+    alert(
+      "PIN: " +
+        pin +
+        "\nUse this PIN on any device to download your files."
+    );
   } catch (err) {
     console.error(err);
     setUploadError("Upload failed: " + err.message);
@@ -277,7 +250,7 @@ if (copyLinkBtn) {
 }
 
 // ===============================
-// 7. LOAD FILES BY PIN
+// 7. LOAD FILES BY PIN  (NO DB CHECK)
 // ===============================
 findBtn.addEventListener("click", () => {
   const pin = codeInput.value.trim();
@@ -299,48 +272,19 @@ async function loadFiles(pin) {
   setDownloadError("");
   hidePinExpiry();
 
-  // First, check PIN metadata
-  try {
-    const { data: pinRow, error: pinError } = await sb
-      .from(PIN_TABLE)
-      .select("*")
-      .eq("pin", pin)
-      .maybeSingle();
-
-    if (pinError) {
-      console.error("Error fetching PIN metadata:", pinError);
-    }
-
-    if (!pinRow) {
-      setDownloadError("No files found for this PIN or it has expired.");
-      foundBox.classList.add("hidden");
-      return;
-    }
-
-    const createdAt = pinRow.created_at;
-    if (createdAt) {
-      const createdTime = new Date(createdAt).getTime();
-      const expiryTime = createdTime + 24 * 60 * 60 * 1000;
-      if (Date.now() > expiryTime) {
-        setDownloadError(
-          "This PIN has expired (24 hours over). Please ask the sender to upload again."
-        );
-        foundBox.classList.add("hidden");
-        return;
-      }
-      startPinExpiryCountdown(createdAt);
-    }
-  } catch (e) {
-    console.error("Unexpected error reading PIN metadata:", e);
-  }
-
-  // Then, list files in storage
+  // Directly list from storage folder: sharepin-files/<PIN>/
   const { data, error } = await sb.storage
     .from(STORAGE_BUCKET)
     .list(pin, { limit: 100 });
 
-  if (error || !data || !data.length) {
+  if (error) {
     console.error(error);
+    setDownloadError("Something went wrong while loading files.");
+    foundBox.classList.add("hidden");
+    return;
+  }
+
+  if (!data || !data.length) {
     setDownloadError("No files found for this PIN.");
     foundBox.classList.add("hidden");
     return;
@@ -348,7 +292,9 @@ async function loadFiles(pin) {
 
   state.foundItems = data;
   foundList.innerHTML = "";
-  fileCountEl.textContent = `${data.length} file${data.length > 1 ? "s" : ""} found`;
+  fileCountEl.textContent = `${data.length} file${
+    data.length > 1 ? "s" : ""
+  } found`;
   foundBox.classList.remove("hidden");
 
   data.forEach((item) => {
