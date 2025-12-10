@@ -5,7 +5,7 @@ const SUPABASE_URL = "https://ojxemhrukdzvemrmdxcf.supabase.co";
 const SUPABASE_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qeGVtaHJ1a2R6dmVtcm1keGNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyNDI5NDQsImV4cCI6MjA3ODgxODk0NH0.yLYXt0BzBSDLMF71q8bIJbFg2RrAk-bVMmcU0_xqtYA";
 const STORAGE_BUCKET = "sharepin-files";
-const PIN_TABLE = "files";
+const PIN_TABLE = "pins";
 
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
