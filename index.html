@@ -32,6 +32,9 @@
 
     <!-- Supabase JavaScript client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- QRCode library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   </head>
 
   <body>
@@ -85,8 +88,16 @@
           <div id="pinBox" class="pin-box hidden">
             <div class="pin-label">Your Share PIN</div>
             <div id="pinCode" class="pin-code"></div>
+
+            <div class="pin-actions">
+              <button id="copyPinBtn" class="btn small">Copy PIN</button>
+              <button id="copyLinkBtn" class="btn small">Copy Link</button>
+            </div>
+
+            <div id="qrCode" class="qr-code"></div>
+
             <p class="hint">
-              Share this PIN with anyone — they can download your files.
+              Share this PIN or scan the QR on any device to download your files.
             </p>
           </div>
         </section>
@@ -124,46 +135,78 @@
             </button>
           </div>
 
+          <div id="pinExpiryBox" class="pin-expiry hidden">
+            PIN expires in <span id="pinExpiryTimer">--:--:--</span>
+          </div>
+
           <div class="info">
             <h3>How it works</h3>
             <ol>
               <li>Files are uploaded to your Supabase bucket.</li>
               <li>You get a unique 6-digit PIN.</li>
-              <li>Anyone can download using that PIN.</li>
+              <li>Anyone can download using that PIN within 24 hours.</li>
             </ol>
             <p class="note">
-              Manage or delete your files anytime from your Supabase dashboard.
+              After 24 hours the PIN stops working. You can manage or delete your files anytime from your Supabase dashboard.
             </p>
           </div>
         </section>
 
       </main>
 
-      <footer class="footer">
-        <p>SharePin • Cloud-based PIN file sharing</p>
-      </footer>
-
       <!-- =======================
            FOLLOW ME SECTION
       ======================== -->
-      <div class="follow-me">
-        <h3>Follow Me</h3>
+      <section class="follow-me">
+        <h3 class="follow-title">Connect with me</h3>
 
-        <div class="follow-icons">
+        <div class="social-row">
           <!-- Instagram -->
-          <a href="https://instagram.com/gunasekhar_online" target="_blank" class="follow-item">
-            <span class="icon">📷</span>
-            <span>@gunasekhar_online</span>
+          <a
+            href="https://instagram.com/gunasekhar_online"
+            target="_blank"
+            class="social-card instagram"
+          >
+            <span class="social-icon">
+              <!-- Instagram SVG icon -->
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <defs>
+                  <linearGradient id="igGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#f58529"/>
+                    <stop offset="25%" stop-color="#dd2a7b"/>
+                    <stop offset="50%" stop-color="#8134af"/>
+                    <stop offset="100%" stop-color="#515bd4"/>
+                  </linearGradient>
+                </defs>
+                <rect x="2" y="2" width="20" height="20" rx="6" ry="6" fill="url(#igGradient)"/>
+                <circle cx="12" cy="12" r="4.5" fill="white"/>
+                <circle cx="12" cy="12" r="3" fill="url(#igGradient)"/>
+                <circle cx="17" cy="7" r="1.2" fill="white"/>
+              </svg>
+            </span>
+            <span class="social-text">
+              <span class="social-label">Instagram</span>
+              <span class="social-handle">@gunasekhar_online</span>
+            </span>
           </a>
 
           <!-- Email -->
-          <a href="mailto:varikuntagunasekhar@gmail.com" class="follow-item">
-            <span class="icon">📧</span>
-            <span>Email Me</span>
+          <a
+            href="mailto:varikuntagunasekhar@gmail.com"
+            class="social-card email"
+          >
+            <span class="social-icon">📧</span>
+            <span class="social-text">
+              <span class="social-label">Email</span>
+              <span class="social-handle">varikuntagunasekhar@gmail.com</span>
+            </span>
           </a>
         </div>
-      </div>
+      </section>
 
+      <footer class="footer">
+        <p>SharePin • Cloud-based PIN file sharing</p>
+      </footer>
     </div>
 
     <script src="app.js"></script>
