@@ -5,10 +5,9 @@ const SUPABASE_URL = "https://ojxemhrukdzvemrmdxcf.supabase.co";
 const SUPABASE_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qeGVtaHJ1a2R6dmVtcm1keGNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyNDI5NDQsImV4cCI6MjA3ODgxODk0NH0.yLYXt0BzBSDLMF71q8bIJbFg2RrAk-bVMmcU0_xqtYA";
 
-const STORAGE_BUCKET = "sharepin-files"; // Supabase storage bucket
-const PIN_TABLE = "pins"; // metadata table (optional but we keep it)
+const STORAGE_BUCKET = "sharepin-files"; // <- bucket name same ga unde
+const PIN_TABLE = "pins";                // <- pins table (okapudu empty unna parvaledu)
 
-// Supabase client
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -44,7 +43,7 @@ const clearBtn = document.getElementById("clearBtn");
 const downloadAllBtn = document.getElementById("downloadAllBtn");
 
 const pinExpiryBox = document.getElementById("pinExpiryBox");
-let pinExpiryTimer = document.getElementById("pinExpiryTimer"); // let, not const!
+let pinExpiryTimer = document.getElementById("pinExpiryTimer"); // let, reassign cheyochu
 
 // ===============================
 // 3. HELPERS
@@ -65,11 +64,13 @@ function displayNameFromStored(name) {
 }
 
 function setUploadError(msg) {
+  if (!uploadError) return;
   uploadError.textContent = msg;
   uploadError.classList.toggle("hidden", !msg);
 }
 
 function setDownloadError(msg) {
+  if (!downloadError) return;
   downloadError.textContent = msg;
   downloadError.classList.toggle("hidden", !msg);
 }
@@ -92,6 +93,7 @@ function getFileIcon(name) {
 }
 
 function renderSelectedFiles() {
+  if (!fileList) return;
   if (!state.filesToUpload.length) {
     fileList.classList.add("hidden");
     return;
@@ -123,20 +125,16 @@ function hidePinExpiry() {
     pinExpiryBox.innerHTML =
       'PIN expires in <span id="pinExpiryTimer">--:--:--</span>';
     const span = pinExpiryBox.querySelector("span");
-    if (span) {
-      pinExpiryTimer = span;
-    }
+    if (span) pinExpiryTimer = span;
   }
 }
 
-// optional: we try to insert metadata but app does NOT depend on it for download
 async function createPinRecord(pin) {
+  // metadata try chestam, fail ayina parvaledu
   try {
     const { data, error } = await sb.from(PIN_TABLE).insert({ pin });
     console.log("PIN INSERT RESULT:", { data, error });
-    if (error) {
-      console.error("Error saving PIN metadata:", error);
-    }
+    if (error) console.error("Error saving PIN metadata:", error);
   } catch (e) {
     console.error("Unexpected error saving PIN metadata:", e);
   }
@@ -145,90 +143,97 @@ async function createPinRecord(pin) {
 // ===============================
 // 4. FILE SELECTION
 // ===============================
-dropZone.addEventListener("click", () => fileInput.click());
+if (dropZone && fileInput) {
+  dropZone.addEventListener("click", () => fileInput.click());
 
-dropZone.addEventListener("dragover", (e) => {
-  e.preventDefault();
-  dropZone.classList.add("drag");
-});
+  dropZone.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    dropZone.classList.add("drag");
+  });
 
-dropZone.addEventListener("dragleave", () => dropZone.classList.remove("drag"));
+  dropZone.addEventListener("dragleave", () =>
+    dropZone.classList.remove("drag")
+  );
 
-dropZone.addEventListener("drop", (e) => {
-  e.preventDefault();
-  dropZone.classList.remove("drag");
-  state.filesToUpload = Array.from(e.dataTransfer.files);
-  renderSelectedFiles();
-});
+  dropZone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dropZone.classList.remove("drag");
+    state.filesToUpload = Array.from(e.dataTransfer.files);
+    renderSelectedFiles();
+  });
 
-fileInput.addEventListener("change", (e) => {
-  state.filesToUpload = Array.from(e.target.files);
-  renderSelectedFiles();
-});
+  fileInput.addEventListener("change", (e) => {
+    state.filesToUpload = Array.from(e.target.files);
+    renderSelectedFiles();
+  });
+}
 
 // ===============================
 // 5. UPLOAD TO SUPABASE
 // ===============================
-uploadBtn.addEventListener("click", async () => {
-  if (!state.filesToUpload.length) {
-    setUploadError("Select at least one file.");
-    return;
-  }
-
-  setUploadError("");
-  uploadBtn.disabled = true;
-  uploadBtn.textContent = "Uploading...";
-
-  const pin = generatePin();
-
-  try {
-    for (const file of state.filesToUpload) {
-      const storedName = `${Date.now()}-${file.name}`;
-      const path = `${pin}/${storedName}`;
-
-      const { error } = await sb.storage
-        .from(STORAGE_BUCKET)
-        .upload(path, file);
-
-      if (error) throw error;
+if (uploadBtn) {
+  uploadBtn.addEventListener("click", async () => {
+    if (!state.filesToUpload.length) {
+      setUploadError("Select at least one file.");
+      return;
     }
 
-    // try to store metadata (not mandatory for download)
-    await createPinRecord(pin);
+    setUploadError("");
+    uploadBtn.disabled = true;
+    uploadBtn.textContent = "Uploading...";
 
-    pinCodeEl.textContent = pin;
-    pinBox.classList.remove("hidden");
+    const pin = generatePin();
 
-    if (qrCodeContainer && typeof QRCode !== "undefined") {
-      qrCodeContainer.innerHTML = "";
-      const url = `${window.location.origin}${window.location.pathname}?pin=${pin}`;
-      new QRCode(qrCodeContainer, {
-        text: url,
-        width: 128,
-        height: 128,
-      });
+    try {
+      for (const file of state.filesToUpload) {
+        const storedName = `${Date.now()}-${file.name}`;
+        const path = `${pin}/${storedName}`;
+
+        const { error } = await sb.storage
+          .from(STORAGE_BUCKET)
+          .upload(path, file);
+
+        if (error) throw error;
+      }
+
+      await createPinRecord(pin);
+
+      if (pinCodeEl && pinBox) {
+        pinCodeEl.textContent = pin;
+        pinBox.classList.remove("hidden");
+      }
+
+      if (qrCodeContainer && typeof QRCode !== "undefined") {
+        qrCodeContainer.innerHTML = "";
+        const url = `${window.location.origin}${window.location.pathname}?pin=${pin}`;
+        new QRCode(qrCodeContainer, {
+          text: url,
+          width: 128,
+          height: 128,
+        });
+      }
+
+      alert(
+        "PIN: " +
+          pin +
+          "\nUse this PIN on any device to download your files."
+      );
+    } catch (err) {
+      console.error(err);
+      setUploadError("Upload failed: " + err.message);
+    } finally {
+      uploadBtn.disabled = false;
+      uploadBtn.textContent = "Upload & Generate PIN";
     }
-
-    alert(
-      "PIN: " +
-        pin +
-        "\nUse this PIN on any device to download your files."
-    );
-  } catch (err) {
-    console.error(err);
-    setUploadError("Upload failed: " + err.message);
-  } finally {
-    uploadBtn.disabled = false;
-    uploadBtn.textContent = "Upload & Generate PIN";
-  }
-});
+  });
+}
 
 // ===============================
 // 6. COPY PIN / LINK & QR
 // ===============================
 if (copyPinBtn) {
   copyPinBtn.addEventListener("click", async () => {
-    const pin = pinCodeEl.textContent.trim();
+    const pin = pinCodeEl ? pinCodeEl.textContent.trim() : "";
     if (!pin || !navigator.clipboard) return;
     await navigator.clipboard.writeText(pin);
     const prev = copyPinBtn.textContent;
@@ -239,7 +244,7 @@ if (copyPinBtn) {
 
 if (copyLinkBtn) {
   copyLinkBtn.addEventListener("click", async () => {
-    const pin = pinCodeEl.textContent.trim();
+    const pin = pinCodeEl ? pinCodeEl.textContent.trim() : "";
     if (!pin || !navigator.clipboard) return;
     const url = `${window.location.origin}${window.location.pathname}?pin=${pin}`;
     await navigator.clipboard.writeText(url);
@@ -252,27 +257,30 @@ if (copyLinkBtn) {
 // ===============================
 // 7. LOAD FILES BY PIN  (NO DB CHECK)
 // ===============================
-findBtn.addEventListener("click", () => {
-  const pin = codeInput.value.trim();
-  if (pin.length !== 6) {
-    setDownloadError("Enter a valid 6-digit PIN");
-    return;
-  }
-  loadFiles(pin);
-});
+if (findBtn) {
+  findBtn.addEventListener("click", () => {
+    const pin = codeInput ? codeInput.value.trim() : "";
+    if (pin.length !== 6) {
+      setDownloadError("Enter a valid 6-digit PIN");
+      return;
+    }
+    loadFiles(pin);
+  });
+}
 
-clearBtn.addEventListener("click", () => {
-  foundBox.classList.add("hidden");
-  setDownloadError("");
-  codeInput.value = "";
-  hidePinExpiry();
-});
+if (clearBtn) {
+  clearBtn.addEventListener("click", () => {
+    if (foundBox) foundBox.classList.add("hidden");
+    setDownloadError("");
+    if (codeInput) codeInput.value = "";
+    hidePinExpiry();
+  });
+}
 
 async function loadFiles(pin) {
   setDownloadError("");
   hidePinExpiry();
 
-  // Directly list from storage folder: sharepin-files/<PIN>/
   const { data, error } = await sb.storage
     .from(STORAGE_BUCKET)
     .list(pin, { limit: 100 });
@@ -280,17 +288,19 @@ async function loadFiles(pin) {
   if (error) {
     console.error(error);
     setDownloadError("Something went wrong while loading files.");
-    foundBox.classList.add("hidden");
+    if (foundBox) foundBox.classList.add("hidden");
     return;
   }
 
   if (!data || !data.length) {
     setDownloadError("No files found for this PIN.");
-    foundBox.classList.add("hidden");
+    if (foundBox) foundBox.classList.add("hidden");
     return;
   }
 
   state.foundItems = data;
+  if (!foundList || !foundBox || !fileCountEl) return;
+
   foundList.innerHTML = "";
   fileCountEl.textContent = `${data.length} file${
     data.length > 1 ? "s" : ""
@@ -314,7 +324,9 @@ async function loadFiles(pin) {
     foundList.appendChild(row);
   });
 
-  downloadAllBtn.onclick = () => downloadAll(pin, data);
+  if (downloadAllBtn) {
+    downloadAllBtn.onclick = () => downloadAll(pin, data);
+  }
 }
 
 // ===============================
@@ -344,6 +356,7 @@ async function downloadSingle(pin, storedName) {
 // 9. DOWNLOAD ALL AS ZIP
 // ===============================
 async function downloadAll(pin, items) {
+  if (!downloadAllBtn) return;
   downloadAllBtn.disabled = true;
   downloadAllBtn.textContent = "Preparing...";
 
