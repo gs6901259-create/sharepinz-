@@ -1723,6 +1723,59 @@ dialog.confirm-modal::backdrop {
   background: radial-gradient(circle at 30% 30%, #fdf497, #fd5949, #d6249f, #285aeb);
 }
 
+/* ── Portfolio Card – Highlighted ─────────────────────────── */
+.social-card.portfolio.highlighted {
+  position: relative;
+  border: 2px solid transparent;
+  background:
+    linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
+    linear-gradient(135deg, #a78bfa, #6366f1, #818cf8, #a78bfa) border-box;
+  background-size: 200% 200%;
+  animation: portfolioBorderShift 4s linear infinite;
+  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.25);
+}
+
+.social-card.portfolio.highlighted:hover {
+  transform: translateY(-6px) scale(1.03);
+  box-shadow: 0 18px 48px rgba(99, 102, 241, 0.45);
+  background:
+    linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
+    linear-gradient(135deg, #818cf8, #a78bfa, #6366f1, #818cf8) border-box;
+}
+
+@keyframes portfolioBorderShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.portfolio-label {
+  color: #a78bfa !important;
+  font-weight: 700 !important;
+  font-size: 11px;
+}
+
+.portfolio-handle {
+  color: var(--primary) !important;
+  font-weight: 800 !important;
+  font-size: 14px;
+  background: linear-gradient(135deg, #a78bfa, #6366f1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.portfolio-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+.portfolio-icon {
+  border-radius: 50%;
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.5);
+}
+
 .footer {
   margin-top: 36px;
   text-align: center;
