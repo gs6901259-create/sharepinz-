@@ -2,8 +2,9 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>SharePinz - Cloud Sharing</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SharePinz AI - Simple, Secure, Intelligent File Sharing</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="SharePinz AI - Simple, secure, intelligent file sharing with 6-digit PINs, AI assistant, and up to 10 GB resumable uploads." />
 
     <!-- Google Tag Manager -->
     <script>
@@ -33,6 +34,9 @@
     <!-- Supabase JavaScript client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+    <!-- TUS Client for Resumable Uploads up to 10 GB -->
+    <script src="https://cdn.jsdelivr.net/npm/tus-js-client@latest/dist/tus.min.js"></script>
+
     <!-- QRCode library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   </head>
@@ -46,129 +50,377 @@
     </noscript>
     <!-- End Google Tag Manager (noscript) -->
 
+    <!-- ==========================================
+         1. CINEMATIC STARTUP INTRO OVERLAY
+         ========================================== -->
+    <div id="introOverlay" class="intro-overlay" title="Click to skip">
+      <div class="intro-content">
+        <div class="intro-logo-glow">SPZ</div>
+        <h1 class="intro-title">
+          SharePinz <span class="intro-ai-badge">AI</span>
+        </h1>
+        <p class="intro-subtitle">Simple, secure, intelligent file sharing.</p>
+        <span class="intro-skip-hint">Tap anywhere to enter</span>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         2. MAIN APP SHELL
+         ========================================== -->
     <div class="app">
       <header class="header">
-        <div class="logo-circle">SPZ</div>
-        <div>
-          <h1 class="title">SharePinz</h1>
-          <p class="subtitle">Real cloud sharing with a 6-digit PIN</p>
+        <div class="brand-group" id="brandHomeBtn" role="button" tabindex="0" aria-label="Go to SharePinz AI home">
+          <div class="logo-circle">SPZ</div>
+          <div>
+            <h1 class="title">
+              SharePinz <span class="title-ai-tag">AI</span>
+            </h1>
+            <p class="subtitle">Simple, secure, intelligent file sharing.</p>
+          </div>
         </div>
 
-        <!-- 🌙 Dark Mode Toggle -->
-        <button id="themeToggle" class="btn ghost small">
-          🌙 Dark
-        </button>
+        <div class="header-controls">
+          <nav class="nav-tabs" aria-label="Main Navigation">
+            <button id="navHomeBtn" class="nav-tab active">Home</button>
+            <button id="navSendBtn" class="nav-tab">Send</button>
+            <button id="navReceiveBtn" class="nav-tab">Receive</button>
+          </nav>
+
+          <!-- 🌙 Dark Mode Toggle -->
+          <button id="themeToggle" class="btn ghost small" aria-label="Toggle dark mode">
+            🌙 Dark
+          </button>
+        </div>
       </header>
 
-      <main class="grid">
-
-        <!-- ============ Sender Section ============ -->
-        <section class="card">
-          <h2 class="card-title">Send Files</h2>
-          <p class="card-desc">
-            Upload files to cloud storage and get a PIN that works on any device.
-          </p>
-
-          <div id="dropZone" class="drop-zone">
-            <div class="drop-icon">⬆</div>
-            <p>
-              <span class="highlight">Tap to choose</span> or drag &amp; drop
+      <main>
+        <!-- ==========================================
+             3. HOME SECTION (3 PRIMARY OPTIONS)
+             ========================================== -->
+        <section id="homeSection" class="home-section view-section active">
+          <div class="hero-banner">
+            <div class="hero-tag">✨ Next-Generation File Sharing</div>
+            <h2 class="hero-title">File Sharing Powered by <span>AI</span></h2>
+            <p class="hero-desc">
+              Upload files up to 10 GB, generate a 6-digit PIN, or let our AI assistant manage and find your files.
             </p>
-            <p class="hint">Your files will be uploaded to Supabase</p>
-            <input id="fileInput" type="file" multiple hidden />
           </div>
 
-          <div id="uploadError" class="error hidden"></div>
-          <div id="fileList" class="file-list hidden"></div>
-
-          <button id="uploadBtn" class="btn primary full">
-            Upload &amp; Generate PIN
-          </button>
-
-          <div id="pinBox" class="pin-box hidden">
-            <div class="pin-label">Your SharePinz PIN</div>
-            <div id="pinCode" class="pin-code"></div>
-
-            <div class="pin-actions">
-              <button id="copyPinBtn" class="btn small">Copy PIN</button>
-              <button id="copyLinkBtn" class="btn small">Copy Link</button>
+          <div class="options-grid">
+            <!-- 1. SEND OPTION -->
+            <div id="cardSend" class="option-card send-card" role="button" tabindex="0" aria-label="Send files">
+              <div class="card-icon-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+              </div>
+              <h3 class="option-card-title">
+                Send Files
+                <span class="option-card-arrow">→</span>
+              </h3>
+              <p class="option-card-desc">
+                Upload files up to 10 GB with resumable chunking and generate a secure 6-digit PIN.
+              </p>
+              <div class="option-card-meta">Up to 10 GB • Resumable</div>
             </div>
 
-            <div id="qrCode" class="qr-code"></div>
+            <!-- 2. RECEIVE OPTION -->
+            <div id="cardReceive" class="option-card receive-card" role="button" tabindex="0" aria-label="Receive files">
+              <div class="card-icon-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                </svg>
+              </div>
+              <h3 class="option-card-title">
+                Receive Files
+                <span class="option-card-arrow">→</span>
+              </h3>
+              <p class="option-card-desc">
+                Enter a 6-digit PIN to securely access and download shared files individually or as a ZIP.
+              </p>
+              <div class="option-card-meta">Instant Access • ZIP Download</div>
+            </div>
 
-            <p class="hint">
-              Share this PIN or scan the QR on any device to download your files.
-            </p>
+            <!-- 3. SHAREPINZ AI OPTION -->
+            <div id="cardAi" class="option-card ai-card" role="button" tabindex="0" aria-label="Open SharePinz AI assistant">
+              <div class="card-icon-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                </svg>
+              </div>
+              <h3 class="option-card-title">
+                SharePinz AI
+                <span class="option-card-arrow">→</span>
+              </h3>
+              <p class="option-card-desc">
+                Manage your files with an AI assistant. Upload, filter, summarize, and control your shares.
+              </p>
+              <div class="option-card-meta">Smart Actions • Voice &amp; Chat</div>
+            </div>
           </div>
         </section>
 
-        <!-- ============ Receiver Section ============ -->
-        <section class="card">
-          <h2 class="card-title">Receive Files</h2>
-          <p class="card-desc">
-            Enter the 6-digit PIN to download the shared files.
-          </p>
-
-          <div class="input-row">
-            <input
-              id="codeInput"
-              maxlength="6"
-              inputmode="numeric"
-              pattern="[0-9]*"
-              placeholder="123456"
-              class="code-input"
-            />
-            <button id="findBtn" class="btn">Find</button>
+        <!-- ==========================================
+             4. SENDER SECTION (LARGE RESUMABLE UPLOADER)
+             ========================================== -->
+        <section id="sendSection" class="view-section">
+          <div class="view-header-bar">
+            <button id="sendBackBtn" class="btn-back">← Back to Home</button>
+            <span class="size-pill-tag">Supports files up to 10 GB</span>
           </div>
 
-          <div id="downloadError" class="error hidden"></div>
+          <div class="card">
+            <h2 class="card-title">Send Files</h2>
+            <p class="card-desc">
+              Upload files to cloud storage and get a secure 6-digit PIN that works on any device.
+            </p>
 
-          <div id="foundBox" class="found-box hidden">
-            <div class="found-header">
-              <span id="fileCount"></span>
-              <button id="clearBtn" class="btn ghost small">Clear</button>
+            <!-- Expiry Selection -->
+            <div class="expiry-control-group">
+              <label class="expiry-label">Share Expiry:</label>
+              <div class="expiry-pills" id="expiryPills">
+                <button type="button" class="expiry-pill" data-hours="1">1 hour</button>
+                <button type="button" class="expiry-pill" data-hours="6">6 hours</button>
+                <button type="button" class="expiry-pill selected" data-hours="24">24 hours (Default)</button>
+                <button type="button" class="expiry-pill" data-hours="72">3 days</button>
+                <button type="button" class="expiry-pill" data-hours="168">7 days</button>
+              </div>
             </div>
-            <div id="foundList" class="file-list small"></div>
 
-            <button id="downloadAllBtn" class="btn primary full">
-              Download All (ZIP)
+            <!-- Drag & Drop Zone -->
+            <div id="dropZone" class="drop-zone" role="button" tabindex="0" aria-label="Drop files here or tap to select">
+              <div class="drop-icon">☁️</div>
+              <p class="drop-text">
+                <span class="highlight">Tap to choose</span> or drag &amp; drop
+              </p>
+              <p class="hint">Large files supported up to 10 GB per file with resumable chunking</p>
+              <input id="fileInput" type="file" multiple hidden />
+            </div>
+
+            <!-- Sensitive File Warning -->
+            <div id="securityAlertBox" class="security-alert-box hidden" role="alert">
+              <span>⚠️</span>
+              <div id="securityAlertText">Warning: Sensitive credential file detected.</div>
+            </div>
+
+            <!-- Upload Error Notice -->
+            <div id="uploadError" class="error hidden" role="alert"></div>
+
+            <!-- Selected Files List Preview -->
+            <div id="fileList" class="file-list hidden"></div>
+
+            <!-- Large File Resumable Upload Progress Card -->
+            <div id="uploadProgressCard" class="upload-progress-card hidden">
+              <div class="progress-header">
+                <span id="progressStatusTitle" class="progress-status-title">Uploading...</span>
+                <span id="progressPctBadge" class="progress-pct-badge">0%</span>
+              </div>
+              <div class="progress-track">
+                <div id="progressBar" class="progress-bar"></div>
+              </div>
+              <div class="progress-telemetry-row">
+                <span id="progressBytesEl">0 MB / 0 MB</span>
+                <span id="progressSpeedEl">-- MB/s</span>
+                <span id="progressEtaEl">ETA: --</span>
+              </div>
+              <div class="progress-controls-row">
+                <button id="uploadPauseResumeBtn" class="btn small">Pause</button>
+                <button id="uploadCancelBtn" class="btn small danger">Cancel</button>
+              </div>
+            </div>
+
+            <!-- Upload & Generate Button -->
+            <button id="uploadBtn" class="btn primary full">
+              Upload &amp; Generate PIN
             </button>
-          </div>
 
-          <div id="pinExpiryBox" class="pin-expiry hidden">
-            PIN expires in <span id="pinExpiryTimer">--:--:--</span>
-          </div>
+            <!-- Generated PIN Box -->
+            <div id="pinBox" class="pin-box hidden">
+              <div class="pin-label">Your SharePinz AI PIN</div>
+              <div id="pinCode" class="pin-code">------</div>
 
-          <div class="info">
-            <h3>How SharePinz works</h3>
-            <ol>
-              <li>Files are uploaded to your Supabase bucket.</li>
-              <li>You get a unique 6-digit PIN.</li>
-              <li>Anyone can download using that PIN within 24 hours.</li>
-            </ol>
-            <p class="note">
-              After 24 hours the PIN stops working. You can manage or delete your files anytime from your Supabase dashboard.
-            </p>
+              <div class="pin-actions">
+                <button id="copyPinBtn" class="btn small">Copy PIN</button>
+                <button id="copyLinkBtn" class="btn small">Copy Link</button>
+                <button id="shareDeviceBtn" class="btn small">Share...</button>
+              </div>
+
+              <div id="pinBoxExpiry" class="pin-expiry-badge">Expires in 24 hours</div>
+
+              <div id="qrCode" class="qr-code-box"></div>
+
+              <p class="hint" style="margin-top: 12px;">
+                Share this PIN or scan the QR code on any device to download your files.
+              </p>
+            </div>
           </div>
         </section>
 
+        <!-- ==========================================
+             5. RECEIVER SECTION
+             ========================================== -->
+        <section id="receiveSection" class="view-section">
+          <div class="view-header-bar">
+            <button id="receiveBackBtn" class="btn-back">← Back to Home</button>
+            <span class="size-pill-tag">Secure Cloud Download</span>
+          </div>
+
+          <div class="card">
+            <h2 class="card-title">Receive Files</h2>
+            <p class="card-desc">
+              Enter the 6-digit PIN to download shared files securely.
+            </p>
+
+            <div class="input-row">
+              <input
+                id="codeInput"
+                maxlength="6"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                placeholder="123456"
+                class="code-input"
+                aria-label="6-digit share PIN"
+              />
+              <button id="findBtn" class="btn primary">Find Files</button>
+            </div>
+
+            <div id="downloadError" class="error hidden" role="alert"></div>
+
+            <div id="foundBox" class="found-box hidden">
+              <div class="found-header">
+                <span id="fileCount">0 files found</span>
+                <button id="clearBtn" class="btn ghost small">Clear</button>
+              </div>
+
+              <!-- Filter Search & Category Pills -->
+              <div class="filter-row">
+                <input
+                  type="text"
+                  id="filterInput"
+                  placeholder="Filter files by name or ext..."
+                  class="filter-input"
+                  aria-label="Filter files"
+                />
+                <button class="filter-pill active" data-filter="all">All</button>
+                <button class="filter-pill" data-filter="pdf">PDFs</button>
+                <button class="filter-pill" data-filter="images">Images</button>
+                <button class="filter-pill" data-filter="videos">Videos</button>
+              </div>
+
+              <!-- Live Expiry Countdown -->
+              <div id="pinExpiryBox" class="pin-expiry-live hidden">
+                ⏳ PIN expires in <span id="pinExpiryTimer">--:--:--</span>
+              </div>
+
+              <div id="foundList" class="file-list"></div>
+
+              <button id="downloadAllBtn" class="btn primary full">
+                Download All (ZIP)
+              </button>
+
+              <div style="display: flex; gap: 8px; margin-top: 8px;">
+                <button id="downloadImagesBtn" class="btn small ghost full">
+                  Download Only Images
+                </button>
+                <button id="downloadPdfsBtn" class="btn small ghost full">
+                  Download Only PDFs
+                </button>
+              </div>
+            </div>
+
+            <div class="info-box">
+              <h3>How SharePinz AI works</h3>
+              <ol>
+                <li>Files are securely uploaded directly to cloud storage.</li>
+                <li>Each share is protected with a unique 6-digit PIN and signed URLs.</li>
+                <li>Anyone with the PIN can access files until the chosen expiry time.</li>
+                <li>Use the floating AI avatar anytime to query or manage your files!</li>
+              </ol>
+            </div>
+          </div>
+        </section>
       </main>
 
-      <!-- =======================
-           FOLLOW ME SECTION
-      ======================== -->
+      <!-- ==========================================
+           6. CONFIRMATION DIALOG MODAL
+           ========================================== -->
+      <dialog id="confirmModal" class="confirm-modal">
+        <h3 id="confirmModalTitle" class="confirm-modal-title">Confirm Action</h3>
+        <p id="confirmModalDesc" class="confirm-modal-desc">Are you sure you want to proceed?</p>
+        <div class="confirm-modal-actions">
+          <button id="confirmCancelBtn" class="btn ghost">Cancel</button>
+          <button id="confirmActionBtn" class="btn danger">Confirm</button>
+        </div>
+      </dialog>
+
+      <!-- ==========================================
+           7. AI ASSISTANT FLYOUT PANEL
+           ========================================== -->
+      <div id="aiPanel" class="ai-panel" role="region" aria-label="SharePinz AI Assistant">
+        <div class="ai-panel-header">
+          <div class="ai-panel-title-group">
+            <div class="ai-panel-avatar-icon">✨</div>
+            <div>
+              <h3 class="ai-panel-title">SharePinz AI</h3>
+              <p class="ai-panel-subtitle">I'm here to help.</p>
+            </div>
+          </div>
+          <button id="closeAiPanelBtn" class="btn-close-panel" aria-label="Close assistant">✕</button>
+        </div>
+
+        <!-- Dynamic Context Quick Actions -->
+        <div id="aiQuickActions" class="ai-quick-actions"></div>
+
+        <!-- Conversation Scroll Area -->
+        <div id="aiChatBody" class="ai-chat-body">
+          <div class="chat-bubble ai">
+            Hello! I am your <strong>SharePinz AI</strong> assistant. I can help you upload large files (up to 10 GB), find shares by PIN, download specific document types, or manage your active shares.
+          </div>
+        </div>
+
+        <!-- Typing Indicator -->
+        <div id="aiTypingIndicator" class="typing-indicator hidden">
+          <span class="typing-dot"></span>
+          <span class="typing-dot"></span>
+          <span class="typing-dot"></span>
+        </div>
+
+        <!-- Chat Input Row -->
+        <div class="ai-input-row">
+          <input
+            type="text"
+            id="aiInput"
+            class="ai-text-input"
+            placeholder="Ask or give a command..."
+            aria-label="Ask AI assistant"
+          />
+          <button id="aiVoiceBtn" class="btn-icon-action" title="Voice Input" aria-label="Voice input">
+            🎤
+          </button>
+          <button id="aiSendBtn" class="btn-icon-action primary" title="Send" aria-label="Send message">
+            ➤
+          </button>
+        </div>
+      </div>
+
+      <!-- ==========================================
+           8. CONNECT WITH ME / SOCIAL LINKS
+           ========================================== -->
       <section class="follow-me">
         <h3 class="follow-title">Connect with me</h3>
 
         <div class="social-row">
-
           <a
             href="https://instagram.com/gunasekhar_online"
             target="_blank"
+            rel="noopener noreferrer"
             class="social-card instagram"
           >
             <span class="social-icon">
-              <!-- Instagram SVG icon -->
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <defs>
                   <linearGradient id="igGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -200,11 +452,15 @@
         </div>
       </section>
 
+      <!-- ==========================================
+           9. FOOTER
+           ========================================== -->
       <footer class="footer">
-        <p>SharePinz • Cloud-based PIN file sharing</p>
+        <p>SharePinz AI • Simple, secure, intelligent file sharing</p>
       </footer>
     </div>
 
-    <script src="app.js"></script>
+    <!-- Application Core Script -->
+    <script type="module" src="app.js"></script>
   </body>
 </html>
